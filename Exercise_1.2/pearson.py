@@ -11,18 +11,17 @@ def expectation(feature):
 
 def covariance(featureA, featureB):
 
-    sumA = 0
-    sumB = 0
+    sum = 0
+
 
     expA = expectation(featureA)
     expB = expectation(featureB)
 
     for i in range(len(featureA)):
 
-        sumA += featureA[i] - expA
-        sumB += featureB[i] - expB
+        sum += (featureA[i] - expA)*(featureB[i] - expB)
 
-    return sumA*sumB
+    return sum
 
 def stdDeviation(feature):
 
@@ -36,11 +35,9 @@ def stdDeviation(feature):
 
 def calculatePearsonCorCoeff(featureA, featureB):
 
-    return covariance(featureA,featureB)/stdDeviation(featureA)*stdDeviation(featureB)
+    return covariance(featureA,featureB)/(stdDeviation(featureA)*stdDeviation(featureB))
 
 #featureA on first row, featureB on second, ....
-
-
 X = [[-2,-2,2,0.2],[-1,-1,1,0.1],[0,1.4,-1,-1],[-1,-1,1,1]]
 
 
