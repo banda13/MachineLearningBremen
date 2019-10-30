@@ -2,12 +2,14 @@ import math
 import itertools
 import numpy as np
 
+# Calculate Mean
 def Mean(values):
     sum = 0
     for value in values:
         sum += value
     return sum/len(values)
 
+# Calculate Variance
 def Variance(values):
     mean = Mean(values)
     sum = 0
@@ -15,6 +17,7 @@ def Variance(values):
         sum += pow(value-mean,2)
     return sum/len(values)
 
+# Calculate Covariance
 def Covariance(values1, values2):
     mean1 = Mean(values1)
     mean2 = Mean(values2)
@@ -23,11 +26,13 @@ def Covariance(values1, values2):
         sum += (values1[i] - mean1) * (values2[i] - mean2)
     return sum/(len(values1))
 
+# Calculate the standard deviation
 def StandardDeviation(values):
     variance = Variance(values)
     return math.sqrt(variance)
 
-def PearsonProductMoment(features1, features2):
+# Calculate the Pearson product-moment correlation coefficient
+def Pearson(features1, features2):
 
     covariance = Covariance(features1,features2)
     stdDev1 = StandardDeviation(features1)
@@ -35,6 +40,7 @@ def PearsonProductMoment(features1, features2):
 
     return covariance/(stdDev1 * stdDev2)
 
+# Calculate the merit of a subset of features
 def Merit(features,classes):
     card = len(features)
     sumff = 0
@@ -42,15 +48,16 @@ def Merit(features,classes):
     couple = 0
     for i in range(len(features)):
         for j in range(i+1,len(features)):
-            sumff += abs(PearsonProductMoment(features[i],features[j]))
+            sumff += abs(Pearson(features[i], features[j]))
             couple += 1
-        sumfc += abs(PearsonProductMoment(features[i],classes))
+        sumfc += abs(Pearson(features[i], classes))
     if len(features)>1:
         merit = (abs(card)*sumfc/card)/math.sqrt(card+card*(card-1)*sumff/couple)
     else:
         merit = sumfc
     return merit
 
+# It finds all the possible different subset of n elements
 def FindSubset(n):
     s = [int(i) for i in range(n)]
     subset = list()
@@ -76,9 +83,9 @@ for i in range(len(subsets)):
     print(f"{subsets[i]}                      {merits[i]}")
 print("\n Answer 1.2-a")
 print("Feature - Class correlations")
-print("1) %s" % PearsonProductMoment(data[:,0],classes))
-print("2) %s" % PearsonProductMoment(data[:,1],classes))
-print("3) %s" % PearsonProductMoment(data[:,2],classes))
+print("1) %s" % Pearson(data[:, 0], classes))
+print("2) %s" % Pearson(data[:, 1], classes))
+print("3) %s" % Pearson(data[:, 2], classes))
 print("\nIf k=2 Naive selector will choose feature 1 and feature 2")
 print("It's because these two features are the ones with the highest feature-class correlation.")
 print("\nAnswer 1.2-b")
