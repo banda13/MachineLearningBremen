@@ -2,10 +2,6 @@ import math
 import itertools
 import numpy as np
 
-
-
-
-
 def Mean(values):
     sum = 0
     for value in values:
@@ -74,7 +70,23 @@ for subset in subsets:
     for element in subset:
         features.append(data[:,element])
     merits.append(Merit(features,classes))
-print(merits)
+
+print("Subset of features             Merit")
+for i in range(len(subsets)):
+    print(f"{subsets[i]}                      {merits[i]}")
+print("\n Answer 1.2-a")
+print("Feature - Class correlations")
+print("1) %s" % PearsonProductMoment(data[:,0],classes))
+print("2) %s" % PearsonProductMoment(data[:,1],classes))
+print("3) %s" % PearsonProductMoment(data[:,2],classes))
+print("\nIf k=2 Naive selector will choose feature 1 and feature 2")
+print("It's because these two features are the ones with the highest feature-class correlation.")
+print("\nAnswer 1.2-b")
+print("According to the merit the subsets with cardinality 2 that we can choose are both (0,2)=(A,C) and (1,2)=(B,C) because they have highest merit")
+print("\nAnswer 1.2-c")
+print("If we could choose from an arbitrary cardinality of subset, we will choose one of the same two subsets")
+
+
 
 
 
