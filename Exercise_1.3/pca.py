@@ -3,6 +3,8 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
+from sklearn.preprocessing import StandardScaler
+
 
 def pca(data, k):
     '''
@@ -12,8 +14,18 @@ def pca(data, k):
 
     returns (eigenvectors (NxM), eigenvalues (N))
     '''
-    #TODO: Your implementation goes here
+    n = data.shape[1]
+    m = data.shape[0]
 
+    mean_vector = [np.mean(x) for x in data]
+    X = []
+    for i in range(len(data)):
+        X.append((data[i, :] - mean_vector[i]))
+    X = np.array(X)
+
+    cov = (1/(n-1)) * np.matmul(X.T, X)
+    eigenvalues, eigenvectors = np.linalg.eig(cov)
+    return eigenvectors[:, :k], eigenvalues[:k]
 
 def showVec(img, shape):
     '''
@@ -70,4 +82,12 @@ def load_dataset_from_folder(dir):
 
 
 #TODO: Your implementation goes here
+k = 3
+# data, datashape = load_dataset_from_folder('data/')
+
+data = np.array(([3, 2], [2, 3]), dtype='float')
+
+eigenvectors, eigenvalues = pca(data, k)
+print(f"Eigenvectors: {eigenvectors}")
+print(f"Eigenvalues: {eigenvalues}")
 
