@@ -3,7 +3,6 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
-from sklearn.decomposition import PCA
 
 
 def pca(data, k):
@@ -14,19 +13,15 @@ def pca(data, k):
 
     returns (eigenvectors (NxM), eigenvalues (N))
     '''
-    n = data.shape[1]
-    m = data.shape[0]
-
     mean_vector = [np.mean(x) for x in data.T]
     X = []
     for i in range(len(data)):
         X.append((data[i, :] - mean_vector[i]))
     X = np.array(X)
-
-    # cov = (1/(n-1)) * np.matmul(X.T, X)
     cov = np.cov(X)
-    eigenvalues, eigenvectors = np.linalg.eig(cov)
+    eigenvalues, eigenvectors = np.linalg.eig(cov.T)
     return eigenvectors[:, :k], eigenvalues[:k]
+
 
 def showVec(img, shape):
     '''
@@ -83,20 +78,12 @@ def load_dataset_from_folder(dir):
 '''
 
 
-def linear_combination(data, weighs):
-    lin = []
-    for factors in data:
-        sum = 0
-        for i in range(len(factors)):
-            sum += factors[i] * weighs[i]
-        lin.append(sum)
-    return lin
-
-
 k = 3
-#data, datashape = load_dataset_from_folder('data/')
+# data, datashape = load_dataset_from_folder('data/')
+# showVec(data[100], datashape)
 
-data = np.array(([3, 2, 1], [2, 3, 1], [1, 2, 3]), dtype='float')
+# data = np.array(([3, 2, 1], [2, 3, 1], [1, 2, 3]), dtype='float')
+data = np.array(([2.5, 0.5, 2.2, 1.9, 3.1, 2.3, 2, 1, 1.5, 1.1], [2.4, 0.7, 2.9, 2.2, 3.0, 2.7, 1.6, 1.1, 1.6, 0.9]), dtype='float')
 
 eigenvectors, eigenvalues = pca(data, k)
 print(f"Eigenvectors: {eigenvectors}")
@@ -104,4 +91,5 @@ print(f"Eigenvalues: {eigenvalues}")
 
 p = normalized_linear_combination(eigenvectors, eigenvalues)
 print(f"Normalized linear compination: {p}")
+
 
