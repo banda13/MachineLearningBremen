@@ -3,15 +3,27 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
+from sklearn.decomposition import PCA
 
 
 def emp_mean(data):
-    mean_vector = [np.mean(x) for x in data]
+    mean_vector = []
+    for x in data.T:
+        mean_vector.append(np.mean(x))
+    # mean_vector = [np.mean(x) for x in data.T]
     X = []
-    for i in range(len(data)):
-        X.append((data[i, :] - mean_vector[i]))
-    return np.array(X)
+    for i in range(len(data[0, :])):
+        X.append((data[:, i] - mean_vector[i]))
+    return np.array(X).T
 
+def get_mean_vector(data):
+    return [np.mean(x) for x in data.T]
+
+def add_mean(data, mean):
+    X = []
+    for i in range(len(data[0, :])):
+        X.append((data[:, i] + mean_vector[i]))
+    return np.array(X).T
 
 def pca(data, k):
     '''
@@ -22,12 +34,13 @@ def pca(data, k):
     returns (eigenvectors (NxM), eigenvalues (N))
     '''
     X = emp_mean(data)
-    cov = np.cov(X)
+    cov = np.cov(X.T)
     eigenvalues, eigenvectors = np.linalg.eig(cov)
     idx = eigenvalues.argsort()[::-1]
     eigenValues = eigenvalues[idx]
     eigenVectors = eigenvectors[:, idx]
-    return eigenVectors[:, :k], eigenValues[:k]
+    x, y = eigenVectors[:, :k].real.astype('float'), eigenValues[:k].real.astype('float')
+    return x, y
 
 
 def showVec(img, shape):
@@ -59,7 +72,7 @@ def normalized_linear_combination(vecs, weights):
     @param weights: list of weights (S) for the first S vectors
     returns numpy.array [M,1]
     '''
-    return np.dot(vecs.T, weights)
+    return np.dot(vecs.T, weights.T)
 
 
 def load_dataset_from_folder(dir):
@@ -94,20 +107,21 @@ def load_dataset_from_folder(dir):
 4) display stuff
 '''
 
-k = 1000
-data, datashape = load_dataset_from_folder('data/')
 
-# data = np.array(([2.5, 0.5, 2.2, 1.9, 3.1, 2.3, 2, 1, 1.5, 1.1], [2.4, 0.7, 2.9, 2.2, 3.0, 2.7, 1.6, 1.1, 1.6, 0.9]), dtype='float')
+if __name__ == '__main__':
+    k = 1000
+    data, datashape = load_dataset_from_folder('data/')
+    data = np.array(data, dtype='float')
 
-eigenvectors, eigenvalues = pca(data, k)
-# print(f"Eigenvectors: {eigenvectors}")
-# print(f"Eigenvalues: {eigenvalues}")
+    eigenvectors, eigenvalues = pca(data, k)
 
-transformed_data = []
-mean_adjusted_data = emp_mean(data)
-for x in mean_adjusted_data.T:
-    transformed_data.append(normalized_linear_combination(eigenvectors, x))
-transformed_data = np.array(transformed_data, dtype='float').T
+    mean_adjusted_data = emp_mean(data)
+    mean_vector = get_mean_vector(data)
+    transformed_data = np.array(np.matmul(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
 
-show2Vec(data[0], transformed_data[0], datashape, datashape)
-show2Vec(data[6], transformed_data[6], datashape, datashape)
+    # show2Vec(data[0], transformed_data[0], datashape, (20, 20))
+
+    t_data = np.array(add_mean(np.matmul(eigenvectors, transformed_data.T), mean_vector), dtype='float').T
+    # showVec(t_data[0], (50, 50))
+    for i in range(len(data)):
+        show2Vec(data[i], t_data[i], datashape, datashape)
