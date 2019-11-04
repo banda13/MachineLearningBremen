@@ -3,27 +3,28 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
-from sklearn.decomposition import PCA
 
 
-def emp_mean(data):
-    mean_vector = []
-    for x in data.T:
-        mean_vector.append(np.mean(x))
-    # mean_vector = [np.mean(x) for x in data.T]
+# returns the mean for each column as a vector
+def get_mean_vector(data):
+    return [np.mean(x) for x in data.T]
+
+
+# subtract the mean vector from each column
+def subtract_mean_vector(data, mean_vector):
     X = []
     for i in range(len(data[0, :])):
         X.append((data[:, i] - mean_vector[i]))
     return np.array(X).T
 
-def get_mean_vector(data):
-    return [np.mean(x) for x in data.T]
 
-def add_mean(data, mean):
+# add the mean vector to each column
+def add_mean_vector(data, mean_vector):
     X = []
     for i in range(len(data[0, :])):
         X.append((data[:, i] + mean_vector[i]))
     return np.array(X).T
+
 
 def pca(data, k):
     '''
@@ -33,14 +34,18 @@ def pca(data, k):
 
     returns (eigenvectors (NxM), eigenvalues (N))
     '''
-    X = emp_mean(data)
+    # subtract the mean vector from the data, calculate covariance matrix and get the eigen vectors and values
+    X = subtract_mean_vector(data, get_mean_vector(data))
     cov = np.cov(X.T)
     eigenvalues, eigenvectors = np.linalg.eig(cov)
+
+    # sort the eigenvalues and the vectors from the smallest value to largest
     idx = eigenvalues.argsort()[::-1]
-    eigenValues = eigenvalues[idx]
-    eigenVectors = eigenvectors[:, idx]
-    x, y = eigenVectors[:, :k].real.astype('float'), eigenValues[:k].real.astype('float')
-    return x, y
+    sorted_eigenvalues = eigenvalues[idx]
+    sorted_eigenvectors = eigenvectors[:, idx]
+
+    # returns the first k sorted eigenvectors and values as a float (conversion needed the round the complex numbers)
+    return sorted_eigenvectors[:, :k].real.astype('float'), sorted_eigenvalues[:k].real.astype('float')
 
 
 def showVec(img, shape):
@@ -55,6 +60,7 @@ def showVec(img, shape):
     plt.show()
 
 
+# display two image side by side to compare
 def show2Vec(img1, img2, shape1, shape2):
     img1 = np.reshape(img1, shape1)
     img2 = np.reshape(img2, shape2)
@@ -107,21 +113,36 @@ def load_dataset_from_folder(dir):
 4) display stuff
 '''
 
-
 if __name__ == '__main__':
-    k = 1000
+    # number of components to keep
+    k = 100
+
+    # read the dataset and convert it to float
     data, datashape = load_dataset_from_folder('data/')
     data = np.array(data, dtype='float')
 
     eigenvectors, eigenvalues = pca(data, k)
 
-    mean_adjusted_data = emp_mean(data)
     mean_vector = get_mean_vector(data)
-    transformed_data = np.array(np.matmul(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
+    mean_adjusted_data = subtract_mean_vector(data, mean_vector)
 
-    # show2Vec(data[0], transformed_data[0], datashape, (20, 20))
+    # multiply the transpose eigenvector matrix with the data without the mean to get or transformed data matrix
+    transformed_data = np.array(np.dot(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
 
-    t_data = np.array(add_mean(np.matmul(eigenvectors, transformed_data.T), mean_vector), dtype='float').T
+    # get back the origin data as multiplying the eigen vector matrix with the transposed transformed data
+    inverse_transformed_data = np.array(add_mean_vector(np.dot(eigenvectors, transformed_data.T), mean_vector),
+                                        dtype='float').T
     # showVec(t_data[0], (50, 50))
-    for i in range(len(data)):
-        show2Vec(data[i], t_data[i], datashape, datashape)
+
+    # display stuff..
+
+    # display the first 100 image
+    fig, axes = plt.subplots(10, 10, figsize=(9, 9), subplot_kw={'xticks': [], 'yticks': []},
+                             gridspec_kw=dict(hspace=0.01, wspace=0.01))
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(inverse_transformed_data[i].reshape(50, 50), cmap="gray")
+    plt.show()
+
+    # display the origin and the reconstructed data
+    # for i in range(len(data)):
+    #     show2Vec(data[i], t_data[i], datashape, datashape)
