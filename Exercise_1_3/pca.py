@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import misc
+import cv2
 
 
 # returns the mean for each column as a vector
@@ -34,6 +35,8 @@ def pca(data, k):
 
     returns (eigenvectors (NxM), eigenvalues (N))
     '''
+    print('Executing pca with k == %d' % k)
+
     # subtract the mean vector from the data, calculate covariance matrix and get the eigen vectors and values
     X = subtract_mean_vector(data, get_mean_vector(data))
     cov = np.cov(X.T)
@@ -61,12 +64,13 @@ def showVec(img, shape):
 
 
 # display two image side by side to compare
-def show2Vec(img1, img2, shape1, shape2):
+def show2Vec(img1, img2, shape1, shape2, title):
     img1 = np.reshape(img1, shape1)
     img2 = np.reshape(img2, shape2)
     f, axarr = plt.subplots(1, 2)
     axarr[0].imshow(img1)
     axarr[1].imshow(img2)
+    f.suptitle(title, fontsize=16)
     plt.show()
 
 
@@ -115,7 +119,7 @@ def load_dataset_from_folder(dir):
 
 if __name__ == '__main__':
     # number of components to keep
-    k = 100
+    k = 4
 
     # read the dataset and convert it to float
     data, datashape = load_dataset_from_folder('data/')
@@ -129,20 +133,44 @@ if __name__ == '__main__':
     # multiply the transpose eigenvector matrix with the data without the mean to get or transformed data matrix
     transformed_data = np.array(np.dot(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
 
-    # get back the origin data as multiplying the eigen vector matrix with the transposed transformed data
+    # get back the origin data as multiplying the eigenvector matrix with the transposed transformed data
     inverse_transformed_data = np.array(add_mean_vector(np.dot(eigenvectors, transformed_data.T), mean_vector),
                                         dtype='float').T
-    # showVec(t_data[0], (50, 50))
 
-    # display stuff..
+    # calculations for different k-s
+    k = 100
+    eigenvectors, eigenvalues = pca(data, k)
+    transformed_data_100 = np.array(np.dot(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
+    inverse_transformed_data_100 = np.array(add_mean_vector(np.dot(eigenvectors, transformed_data_100.T), mean_vector),
+                                            dtype='float').T
 
-    # display the first 100 image
+    k = 400
+    eigenvectors, eigenvalues = pca(data, k)
+    transformed_data_400 = np.array(np.dot(eigenvectors.T, mean_adjusted_data.T), dtype='float').T
+    inverse_transformed_data_400 = np.array(add_mean_vector(np.dot(eigenvectors, transformed_data_400.T), mean_vector),
+                                            dtype='float').T
+
+    """ Exercise 1.3 """
+
+    print('Showing the first 4 principal component')
+    show2Vec(data[0], transformed_data[0], datashape, (2, 2), "First 4 principal component")
+
+    print('Showing the first 100 principal component')
+    show2Vec(data[0], transformed_data_100[0], datashape, (10, 10), "First 100 principal component")
+
+    print('Showing the first 100 reconstructed picture from 4 principal component')
     fig, axes = plt.subplots(10, 10, figsize=(9, 9), subplot_kw={'xticks': [], 'yticks': []},
                              gridspec_kw=dict(hspace=0.01, wspace=0.01))
     for i, ax in enumerate(axes.flat):
         ax.imshow(inverse_transformed_data[i].reshape(50, 50), cmap="gray")
+    fig.suptitle('First 100 reconstructed picture from 4 principal component', fontsize=16)
     plt.show()
 
-    # display the origin and the reconstructed data
-    # for i in range(len(data)):
-    #     show2Vec(data[i], t_data[i], datashape, datashape)
+    print('Showing the difference between the origin and the reconstructed data with k= 4, 100, 400')
+    show2Vec(data[0], inverse_transformed_data[0], datashape, datashape, "Origin vs Reconstructed data (k == 4)")
+    show2Vec(data[0], inverse_transformed_data_100[0], datashape, datashape, "Origin vs Reconstructed data (k == 100)")
+    show2Vec(data[0], inverse_transformed_data_400[0], datashape, datashape, "Origin vs Reconstructed data (k == 400)")
+
+    print('Showing the difference between different k-values: 4 vs 100, 100 vs 400')
+    show2Vec(inverse_transformed_data[0], inverse_transformed_data_100[0], datashape, datashape, "Reconstructed datas (4 vs 100)")
+    show2Vec(inverse_transformed_data_100[0], inverse_transformed_data_400[0], datashape, datashape, "Reconstructed datas (100 vs 400)")
