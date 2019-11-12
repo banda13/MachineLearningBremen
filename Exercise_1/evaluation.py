@@ -21,38 +21,33 @@ def stratification(n_samples,n_folds, labels):
     new_data = []
     new_label = []
     copy_data = []
+    k = 0
     n_elem_class = (n_samples/n_folds)/len(vec_classes)
     copy_data.append(np.copy(data_target_iris[0])) 
     copy_data.append(np.copy(data_target_iris[1]))
     counters_array = [0] * len(vec_classes)
     for i in range(n_folds):
-        print(copy_data[0])
-        print("------------")
-        for k in range(len(copy_data[0])):
+        while k < len(copy_data[0]):
             for j in  range(len(vec_classes)):
                 if labels[k] == vec_classes[j]:
                     cl_tp = j
                     break
 
             if counters_array[cl_tp] < n_elem_class:
-                
                 new_data.append(copy_data[0][k])
                 new_label.append(copy_data[1][k])
                 copy_data[0] = np.delete(copy_data[0],k,0)
-                copy_data[1] = np.delete(copy_data[1],k,0)
+                copy_data[1] = np.delete(copy_data[1],k)
                 counters_array[cl_tp] += 1
-                print(copy_data[0])
-                print("------------")
-
-
+            else:
+                k += 1
 
             if np.sum(counters_array) == n_elem_class * len(vec_classes):
                 counters_array = [0] * len(vec_classes)
+                k = 0
                 break
 
     result = (np.asarray(new_data), np.asarray(new_label))
-    #print(result[0])
-    print("------------")
     return result
 
 
