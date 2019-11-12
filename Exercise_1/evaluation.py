@@ -9,8 +9,6 @@ from sklearn.neighbors import KNeighborsClassifier as BlackBoxClassifier
 from sklearn.datasets import load_iris
 
 
-<<<<<<< HEAD
-=======
 def shuffle_in_unison(a, b):
     rng_state = np.random.get_state()
     np.random.shuffle(a)
@@ -23,10 +21,11 @@ def stratification(n_samples,n_folds, labels):
     new_data = []
     new_label = []
     copy_data = []
+    #ciao
     k = 0
     n_elem_class = (n_samples/n_folds)/len(vec_classes)
-    copy_data.append(np.copy(data_target_iris[0])) 
-    copy_data.append(np.copy(data_target_iris[1]))
+    copy_data.append(np.copy(data[0])) 
+    copy_data.append(np.copy(data[1]))
     counters_array = [0] * len(vec_classes)
     for i in range(n_folds):
         while k < len(copy_data[0]):
@@ -51,7 +50,6 @@ def stratification(n_samples,n_folds, labels):
 
     result = (np.asarray(new_data), np.asarray(new_label))
     return result
->>>>>>> b1b7d45b6ba97a3a44df6227ebe22d66aad6a94e
 
 
 
@@ -171,38 +169,38 @@ class Evaluation:
         cv_splits = []
         working_data = data
 
-        for i in n_rep:
+        
 
-            if rand == True:
-                shuffle_in_unison(working_data[0],working_data[1])
+        if rand == True:
+            shuffle_in_unison(working_data[0],working_data[1])
 
-            if y is not None:
-                working_data = stratification(n_samples,n_folds,y)
-                data = list(data)
-                data[1] = working_data[1]
-                data = tuple(data)
-            
-            # dimension of folder, used in cycle above
-            folder_dimension = n_samples/n_folds
+        if y is not None:
+            working_data = stratification(n_samples,n_folds,y)
+            data = list(data)
+            data[1] = working_data[1]
+            data = tuple(data)
+        
+        # dimension of folder, used in cycle above
+        folder_dimension = n_samples/n_folds
 
-            #utils for the following cycle
-            ini = 0
-            end = folder_dimension
-            actual_shift = 0
+        #utils for the following cycle
+        ini = 0
+        end = folder_dimension
+        actual_shift = 0
 
-            # crating the folders..
-            for k in range(n_folds):
-                if k == 0:
-                    cv_splits.append((working_data[0][int(folder_dimension):],working_data[0][:int(folder_dimension)]))
+        # crating the folders..
+        for k in range(n_folds):
+            if k == 0:
+                cv_splits.append((working_data[0][int(folder_dimension):],working_data[0][:int(folder_dimension)]))
 
-                elif k == range(n_folds):
-                    cv_splits.append((working_data[0][:int(ini+actual_shift)],working_data[0][int(ini+actual_shift):]))
+            elif k == range(n_folds):
+                cv_splits.append((working_data[0][:int(ini+actual_shift)],working_data[0][int(ini+actual_shift):]))
 
-                else:
-                    cv_splits.append(( np.concatenate((working_data[0][:int(ini+actual_shift)], working_data[0][int(end+actual_shift):])) ,  working_data[0][int(ini+actual_shift):int(end+actual_shift)]     ))
+            else:
+                cv_splits.append(( np.concatenate((working_data[0][:int(ini+actual_shift)], working_data[0][int(end+actual_shift):])) ,  working_data[0][int(ini+actual_shift):int(end+actual_shift)]     ))
 
 
-                actual_shift = actual_shift + folder_dimension
+            actual_shift = actual_shift + folder_dimension
 
 
         return cv_splits
@@ -304,8 +302,7 @@ if __name__ == '__main__':
         cv_splits = eval.generate_cv_pairs(samples,num_folds,repetions,random,None)
     else:
         cv_splits = eval.generate_cv_pairs(samples,num_folds,repetions,random,data[1])
-    label_splits = eval.generate_label_pairs(samples,num_folds,data[1]) 
-
-
-
     
+    label_splits = eval.generate_label_pairs(samples,num_folds,data[1])
+
+    print(BlackBoxClassifier(cv_splits[0],cv_splits[1],label_splits[0],label_splits[1]))
