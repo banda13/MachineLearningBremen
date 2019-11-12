@@ -1,10 +1,10 @@
-import cv2
+import scipy.misc
 import numpy as np
 from matplotlib import pyplot as plt
 
-if __name__ == "__enhance__":
+if __name__ == "__main__":
     # Original image is read
-    img = cv2.imread('asguard2.png',0)
+    img = scipy.misc.imread('asguard2.png',True)
     # Fast Fourier Transform of the original image
     f = np.fft.fft2(img)
     # The Transform is shifted in order to center it
