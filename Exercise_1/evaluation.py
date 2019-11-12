@@ -101,7 +101,7 @@ class Evaluation:
                 if k == 0:
                     cv_splits.append((indices_array[int(folder_dimension):], indices_array[:int(folder_dimension)]))
 
-                elif k == range(n_folds):
+                elif k == n_folds-1:
                     cv_splits.append(
                         (indices_array[:int(ini + actual_shift)], indices_array[int(ini + actual_shift):]))
 
@@ -199,7 +199,7 @@ if __name__ == '__main__':
 
     label_pairs = []
     eval = Evaluation()
-    n_rep = 3
+    n_rep = 10
     rand = True
     data = load_iris(True)
     n_samples = len(data[0])
