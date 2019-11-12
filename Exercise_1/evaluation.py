@@ -2,145 +2,58 @@
 
 # do not use any other imports!
 import numpy as np
-from collections import Counter
 import matplotlib.pyplot as plt
 import random
 from sklearn.neighbors import KNeighborsClassifier as BlackBoxClassifier
 from sklearn.datasets import load_iris
 
 
-def shuffle_in_unison(a, b):
-    rng_state = np.random.get_state()
-    np.random.shuffle(a)
-    np.random.set_state(rng_state)
-    np.random.shuffle(b)
-
-def stratification(n_samples,n_folds, labels):
-    cl_tp = 0
-    vec_classes = np.unique(labels)
-    new_data = []
-    new_label = []
-    copy_data = []
-    #ciao
-    k = 0
-    n_elem_class = (n_samples/n_folds)/len(vec_classes)
-    copy_data.append(np.copy(data[0])) 
-    copy_data.append(np.copy(data[1]))
-    counters_array = [0] * len(vec_classes)
-    for i in range(n_folds):
-        while k < len(copy_data[0]):
-            for j in  range(len(vec_classes)):
-                if labels[k] == vec_classes[j]:
-                    cl_tp = j
-                    break
-
-            if counters_array[cl_tp] < n_elem_class:
-                new_data.append(copy_data[0][k])
-                new_label.append(copy_data[1][k])
-                copy_data[0] = np.delete(copy_data[0],k,0)
-                copy_data[1] = np.delete(copy_data[1],k)
-                counters_array[cl_tp] += 1
-            else:
-                k += 1
-
-            if np.sum(counters_array) == n_elem_class * len(vec_classes):
-                counters_array = [0] * len(vec_classes)
-                k = 0
-                break
-
-    result = (np.asarray(new_data), np.asarray(new_label))
-    return result
-
-
-
 class Evaluation:
     """This class provides functions for evaluating classifiers """
 
-    # scikit-learn implementaion
-    # https://github.com/scikit-learn/scikit-learn/blob/1495f6924/sklearn/model_selection/_split.py#L360
-
-    def shuffle_in_unison(a, b):
-        rng_state = np.random.get_state()
-        np.random.shuffle(a)
-        np.random.set_state(rng_state)
-        np.random.shuffle(b)
-
-    def stratification(n_samples,n_folds, labels):
+    def stratification(self, n_folds, ind_array, y):
+        new_array = []
+        k = 0
         cl_tp = 0
-        vec_classes = np.unique(labels)
-        new_data = []
-        new_label = []
-        copy_data = []
-        n_elem_class = (n_samples/n_folds)/len(vec_classes)
-        copy_data.append(np.copy(data[0])) 
-        copy_data.append(np.copy(labels))
-        counters_array = [0] * len(vec_classes)
+        class_array = np.unique(y)
+        temp_array = np.copy(ind_array)
+        counters_array = [0] * len(class_array)
+        n_elem_class = (len(data[0]) / n_folds) / len(class_array)
         for i in range(n_folds):
-            k = 0 
-            while k < len(copy_data[0]):
-                for j in  range(len(vec_classes)):
-                    if copy_data[1][k] == vec_classes[j]:
+            while k < len(temp_array):
+                for j in range(len(class_array)):
+                    if y[temp_array[k]] == class_array[j]:
                         cl_tp = j
                         break
 
                 if counters_array[cl_tp] < n_elem_class:
-                    
-                    new_data.append(copy_data[0][k])
-                    new_label.append(copy_data[1][k])
-                    copy_data[0] = np.delete(copy_data[0],k,0)
-                    copy_data[1] = np.delete(copy_data[1],k,0)
+                    new_array.append(temp_array[k])
+                    temp_array = np.delete(temp_array,k)
                     counters_array[cl_tp] += 1
                 else:
                     k += 1
-                if np.sum(counters_array) == n_elem_class * len(vec_classes):  
-                    counters_array = [0] * len(vec_classes)
+
+                if np.sum(counters_array) == n_elem_class * len(class_array):
+                    counters_array = [0] * len(class_array)
+                    k = 0
                     break
+        return new_array
 
-        result = (np.asarray(new_data), np.asarray(new_label))
-        return result
-
-
-    def generate_label_pairs(self, label_samples, n_folds, labels):
-
-        folder_dimension = label_samples/n_folds
-        label_splits = []
-
-      
-        ini = 0
-        end = folder_dimension
-        actual_shift = 0
-        for k in range(num_folds):
-            if k == 0:
-                label_splits.append((labels[int(folder_dimension):],labels[:int(folder_dimension)]))
-
-            elif k == range(num_folds):
-                label_splits.append((labels[:int(ini+actual_shift)],labels[int(ini+actual_shift):]))
-
-            else:
-                label_splits.append((np.concatenate((labels[:int(ini+actual_shift)], labels[int(end+actual_shift):])),labels[int(ini+actual_shift):int(end+actual_shift)]))
-
-
-            actual_shift = actual_shift + folder_dimension
-   
-        return label_splits
-
-
-    def generate_cv_pairs(self, n_samples, n_folds=10, n_rep=1, rand=False, y=None):
-        
-
+    def generate_cv_pairs(self, n_samples, n_folds=5, n_rep=1, rand=False,
+                          y=None):
         """ Train and test pairs according to k-fold cross validation
 
         Parameters
         ----------
 
         n_samples : int
-            The number of samples in the dataset = 150
+            The number of samples in the dataset
 
         n_folds : int, optional (default: 5)
-            The number of folds for the cross validation = 10
- 
+            The number of folds for the cross validation
+
         n_rep : int, optional (default: 1)
-            The number of repetitions for the cross validation (1 or 10 repetitions)
+            The number of repetitions for the cross validation
 
         rand : boolean, optional (default: False)
             If True the data is randomly assigned to the folds. The order of the
@@ -160,48 +73,44 @@ class Evaluation:
             *n_folds* x *n_rep*.
 
         """
-        
+
         ### YOUR IMPLEMENTATION GOES HERE ###
 
-        # if random is true, shuffle both the data and labels from iris dataset in the same way
-        global data
-
+        indices_array = np.arange(0,n_samples)
         cv_splits = []
-        working_data = data
-
-        
-
-        if rand == True:
-            shuffle_in_unison(working_data[0],working_data[1])
-
-        if y is not None:
-            working_data = stratification(n_samples,n_folds,y)
-            data = list(data)
-            data[1] = working_data[1]
-            data = tuple(data)
-        
-        # dimension of folder, used in cycle above
+        working_data = ()
         folder_dimension = n_samples/n_folds
+        if rand == False:
+            n_rep = 1
 
-        #utils for the following cycle
-        ini = 0
-        end = folder_dimension
-        actual_shift = 0
-
-        # crating the folders..
-        for k in range(n_folds):
-            if k == 0:
-                cv_splits.append((working_data[0][int(folder_dimension):],working_data[0][:int(folder_dimension)]))
-
-            elif k == range(n_folds):
-                cv_splits.append((working_data[0][:int(ini+actual_shift)],working_data[0][int(ini+actual_shift):]))
-
+        for i in range(n_rep):
+            if rand == True:
+                np.random.shuffle(indices_array)
+                if y is not None:
+                    indices_array = self.stratification(n_folds, indices_array, y)
+                else:
+                    working_data = data
             else:
-                cv_splits.append(( np.concatenate((working_data[0][:int(ini+actual_shift)], working_data[0][int(end+actual_shift):])) ,  working_data[0][int(ini+actual_shift):int(end+actual_shift)]     ))
+                working_data = data
 
+            ini = 0
+            end = folder_dimension
+            actual_shift = 0
 
-            actual_shift = actual_shift + folder_dimension
+            for k in range(n_folds):
+                if k == 0:
+                    cv_splits.append((indices_array[int(folder_dimension):], indices_array[:int(folder_dimension)]))
 
+                elif k == range(n_folds):
+                    cv_splits.append(
+                        (indices_array[:int(ini + actual_shift)], indices_array[int(ini + actual_shift):]))
+
+                else:
+                    cv_splits.append((np.concatenate(
+                        (indices_array[:int(ini + actual_shift)], indices_array[int(end + actual_shift):])),
+                                      indices_array[int(ini + actual_shift):int(end + actual_shift)]))
+
+                actual_shift = actual_shift + folder_dimension
 
         return cv_splits
 
@@ -237,9 +146,22 @@ class Evaluation:
             The average metric value across train-test-pairs
         """
         ### YOUR IMPLEMENTATION GOES HERE ###
+        sum = 0
+        X_train = []
+        Y_train = []
+        X_test = []
+        Y_test = []
+        for i in range(len(train_test_pairs)):
+            for j in range(len(train_test_pairs[i][0])+len(train_test_pairs[i][1])):
+                if j < len(train_test_pairs[i][0]):
+                    X_train.append(X[train_test_pairs[i][0][j]])
+                    Y_train.append(y[train_test_pairs[i][0][j]])
+                else:
+                    X_test.append((X[train_test_pairs[i][1][j-len(train_test_pairs[i][0])]]))
+                    Y_test.append((y[train_test_pairs[i][1][j-len(train_test_pairs[i][0])]]))
+            sum += classifier(X_train,X_test,Y_train,Y_test)
 
-        
-
+        return sum/len(train_test_pairs)
 
 
 
@@ -272,37 +194,16 @@ class Evaluation:
         acc = bbc.score(X_test, y_test)
         return acc
 
-    
-
-   
-
-
 if __name__ == '__main__':
     # Instance of the Evaluation class
+
+    label_pairs = []
     eval = Evaluation()
-    ### YOUR IMPLEMENTATION FOR PROBLEM 1.1 GOES HERE ###
-
-    # returns the IRIS dataset as ``(data, target)``
+    n_rep = 3
+    rand = True
     data = load_iris(True)
-    # choose here if you want random folders
-    random = True
-
-    #chose if you want stratification
-    strat = True
-    # choose the number of the folds
-    num_folds = 10
-    repetions = 2
-
-    #if random == True:
-          #  shuffle_in_unison(n_samples,y)
-    
-
-    samples = len(data[0])
-    if strat == False:
-        cv_splits = eval.generate_cv_pairs(samples,num_folds,repetions,random,None)
-    else:
-        cv_splits = eval.generate_cv_pairs(samples,num_folds,repetions,random,data[1])
-    
-    label_splits = eval.generate_label_pairs(samples,num_folds,data[1])
-
-    print(BlackBoxClassifier(cv_splits[0],cv_splits[1],label_splits[0],label_splits[1]))
+    n_samples = len(data[0])
+    n_folds = 10
+    cv_pairs = eval.generate_cv_pairs(n_samples, n_folds, n_rep, rand, None)
+    print(eval.apply_cv(data[0],data[1],cv_pairs,eval.black_box_classifier))
+    #print(cv_pairs)
