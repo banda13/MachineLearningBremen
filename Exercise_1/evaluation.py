@@ -12,12 +12,36 @@ class Evaluation:
     """This class provides functions for evaluating classifiers """
 
     def stratification(self, n_folds, ind_array, y):
+
+        """ This function does the stratification of the data. More precisely,
+            it uses an array of counters, with dimension equal to the number of
+            classes of the dataset,  to organize the data in a way such that each folder
+            will have the same number of instances of each class. This is realized by coping
+            the indices array and visiting it sequentially until an element of a class with
+            the corresponding counter less than necessary quantity (=n_elem_class) is found.
+            At this point the index of this element is added at the result array and is cancelled
+            in the copied array.
+
+            Parameters
+            ----------
+
+            n_folds : int
+                The number of the folders in which the dataset will be divided
+
+            ind_array: array-like, shape (n_samples)
+                Array containing the indices of the data
+
+            y : array-like, shape (n_samples)
+                labels of the data
+            """
+
         new_array = []
         k = 0
         cl_tp = 0
-        class_array = np.unique(y)
+        class_array, counts = np.unique(y, return_counts=True)
+        counts = np.floor_divide(counts,n_folds)
+        counters_array = np.copy(counts)
         temp_array = np.copy(ind_array)
-        counters_array = [0] * len(class_array)
         n_elem_class = (len(data[0]) / n_folds) / len(class_array)
         for i in range(n_folds):
             while k < len(temp_array):
@@ -26,15 +50,15 @@ class Evaluation:
                         cl_tp = j
                         break
 
-                if counters_array[cl_tp] < n_elem_class:
+                if counters_array[cl_tp] > 0:
                     new_array.append(temp_array[k])
                     temp_array = np.delete(temp_array,k)
-                    counters_array[cl_tp] += 1
+                    counters_array[cl_tp] -= 1
                 else:
                     k += 1
 
-                if np.sum(counters_array) == n_elem_class * len(class_array):
-                    counters_array = [0] * len(class_array)
+                if np.sum(counters_array) == 0:
+                    counters_array = np.copy(counts)
                     k = 0
                     break
         return new_array
@@ -73,8 +97,6 @@ class Evaluation:
             *n_folds* x *n_rep*.
 
         """
-
-        ### YOUR IMPLEMENTATION GOES HERE ###
 
         indices_array = np.arange(0,n_samples)
         cv_splits = []
@@ -204,6 +226,6 @@ if __name__ == '__main__':
     data = load_iris(True)
     n_samples = len(data[0])
     n_folds = 10
-    cv_pairs = eval.generate_cv_pairs(n_samples, n_folds, n_rep, rand, None)
+    cv_pairs = eval.generate_cv_pairs(n_samples, n_folds, n_rep, rand, data[1])
     print(eval.apply_cv(data[0],data[1],cv_pairs,eval.black_box_classifier))
     #print(cv_pairs)
