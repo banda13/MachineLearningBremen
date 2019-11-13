@@ -80,20 +80,38 @@ if __name__ == "__main__":
             features.append(data[:,element])
         merits.append(Merit(features,classes))
 
-    print("Subset of features             Merit")
-    for i in range(len(subsets)):
-        print(f"{subsets[i]}                      {merits[i]}")
-    print("\n Answer 1.2-a")
-    print("Feature - Class correlations")
+    
+
+    print("\n")
+    print("-----Computation and documentation of: -----")
+    print("\nFeature - Feature correlations")
+    
+
+    print("a-a) %s" % Pearson(data[:, 0], data[:, 0])) 
+    print("a-b) %s" % Pearson(data[:, 0], data[:, 1])) 
+    print("a-c) %s" % Pearson(data[:, 0], data[:, 2])) 
+    print("b-b) %s" % Pearson(data[:, 1], data[:, 1])) 
+    print("b-c) %s" % Pearson(data[:, 1], data[:, 2])) 
+    print("c-c) %s" % Pearson(data[:, 2], data[:, 2]))
+    print("\n(Note that the correlation between same class (e.g. a-a) should result 1, but because of calculation's approssimation it is not perfectly 1)")
+
+
+    print("\nFeature - Class correlations")
     print("1) %s" % Pearson(data[:, 0], classes))
     print("2) %s" % Pearson(data[:, 1], classes))
     print("3) %s" % Pearson(data[:, 2], classes))
+
+    print("\nSubset of features             Merit")
+    for i in range(len(subsets)):
+        print(f"{subsets[i]}                      {merits[i]}")
+
+    print("\n-----Answer 1.2-a-----")
     print("\nIf k=2 Naive selector will choose feature 1 and feature 2")
     print("It's because these two features are the ones with the highest feature-class correlation.")
-    print("\nAnswer 1.2-b")
-    print("According to the merit the subsets with cardinality 2 that we can choose are both (0,2)=(A,C) and (1,2)=(B,C) because they have highest merit")
-    print("\nAnswer 1.2-c")
-    print("If we could choose from an arbitrary cardinality of subset, we will choose one of the same two subsets")
+    print("\n-----Answer 1.2-b-----")
+    print("According to the merit the subsets with cardinality 2 that we can choose are both (0,2)=(A,C) and (1,2)=(B,C) because they have the same highest merits")
+    print("\n-----Answer 1.2-c-----")
+    print("If we could choose from an arbitrary cardinality of subset, we will choose one of the same two subsets of above. Indeed there is no subset with higher merit value")
 
 
 
