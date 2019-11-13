@@ -61,7 +61,7 @@ class Evaluation:
                     k += 1
 
                 if np.sum(counters_array) == 0:
-                    if i != 9:
+                    if i != n_folds-1:
                         # updating the ratio of the remaining instances
                         # necessary in case of not equally distributed class
                         counters_array = np.copy(np.floor_divide(counts,n_folds - i - 1))
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             
     """
     n_folds = 10
-    n_rep = 10
+    n_rep = 20
     rand = True
     strat = True
     data = load_iris(True)
