@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+
+# do not use any other imports!
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+
+class KMeans:
+    
+    def __init__(self, k=1, epochs=1):
+        """ Init stuff
+
+        Parameters
+        ----------
+
+        k : int
+            Number of clusters
+        
+        epochs : int
+            Number of epochs to run 
+
+        """
+        ### YOUR IMPLEMENTATION GOES HERE ###
+
+    def fit(self, X):
+        """Compute k-means clustering.
+        Parameters
+        ----------
+        X : array-like or sparse matrix, shape=(n_samples, n_features)
+            Training instances to cluster.
+        """
+        ### YOUR IMPLEMENTATION GOES HERE ###
+        
+
+    def predict(self, X):
+        """Predict the closest cluster each sample in X belongs to.
+        In the vector quantization literature, `cluster_centers_` is called
+        the code book and each value returned by `predict` is the index of
+        the closest code in the code book.
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape = [n_samples, n_features]
+            New data to predict.
+        Returns
+        -------
+        labels : array, shape [n_samples,]
+            Index of the cluster each sample belongs to.
+        """
+        ### YOUR IMPLEMENTATION GOES HERE ###
+        
+
+if __name__ == '__main__':
+    # Load data
+    X = np.genfromtxt('cluster_dataset2d.txt', delimiter=',')
+
+    # Instance of the Kmeans class
+    c = KMeans()
+    c.fit(X)
+    c.predict(X)
