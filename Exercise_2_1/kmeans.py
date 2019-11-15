@@ -20,7 +20,8 @@ class KMeans:
             Number of epochs to run 
 
         """
-        ### YOUR IMPLEMENTATION GOES HERE ###
+        self.k = k
+        self. epochs = epochs
 
     def fit(self, X):
         """Compute k-means clustering.
@@ -29,8 +30,12 @@ class KMeans:
         X : array-like or sparse matrix, shape=(n_samples, n_features)
             Training instances to cluster.
         """
-        ### YOUR IMPLEMENTATION GOES HERE ###
-        
+
+        centers = []
+        # Generate the first k centroid randomly
+        for i in range(self.k):
+            centers = np.append(centers, random.choice([i for i in range(len(X)) if i not in centers]))
+
 
     def predict(self, X):
         """Predict the closest cluster each sample in X belongs to.
@@ -54,6 +59,6 @@ if __name__ == '__main__':
     X = np.genfromtxt('cluster_dataset2d.txt', delimiter=',')
 
     # Instance of the Kmeans class
-    c = KMeans()
+    c = KMeans(5)
     c.fit(X)
     c.predict(X)
