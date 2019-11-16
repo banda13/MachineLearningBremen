@@ -51,6 +51,8 @@ class KMeans:
                 sum_X[labels[j]] += X[j][0]
                 sum_Y[labels[j]] += X[j][1]
                 counter[labels[j]] +=1
+            if counter.__contains__(0):
+                raise Exception("A cluster is empty --> restart the method")
             for l in range(self.k):
                 mean_X[l] = sum_X[l]/counter[l]
                 mean_Y[l] = sum_Y[l]/counter[l]
@@ -106,5 +108,11 @@ if __name__ == '__main__':
     # Load data
     X = np.genfromtxt('cluster_dataset2d.txt', delimiter=',')
     # Instance of the Kmeans class
-    c = KMeans(6)
-    c.fit(X)
+    while True:
+        try:
+            c = KMeans(3)
+            c.fit(X)
+            c.predict(X)
+            break
+        except Exception as e:
+            print(e)
