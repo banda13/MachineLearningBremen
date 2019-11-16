@@ -7,7 +7,7 @@ import random
 
 class KMeans:
     
-    def __init__(self, k=1, epochs=6):
+    def __init__(self, k=1, epochs=3):
         """ Init stuff
 
         Parameters
@@ -52,7 +52,7 @@ class KMeans:
                 sum_Y[labels[j]] += X[j][1]
                 counter[labels[j]] +=1
             if counter.__contains__(0):
-                raise Exception("A cluster is empty --> restart the method")
+                raise Exception("One or more clusters become empty: restarting the method")
             for l in range(self.k):
                 mean_X[l] = sum_X[l]/counter[l]
                 mean_Y[l] = sum_Y[l]/counter[l]
@@ -112,7 +112,7 @@ if __name__ == '__main__':
         try:
             c = KMeans(3)
             c.fit(X)
-            c.predict(X)
+            labels = c.predict(X)
             break
         except Exception as e:
             print(e)
