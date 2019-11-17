@@ -15,9 +15,10 @@ def calculate_C_index(X, clusters):
     return (Scl - Smin) / (Smax - Smin)
 
 
-def plot_results(min_c_values, avg_c_values):
-    plt.plot(min_c_values, 'r')
-    plt.plot(avg_c_values, 'b')
+def plot_results(min_c_values, avg_c_values, k):
+    plt.xlim(2, 9)
+    plt.plot(k, min_c_values, 'r')
+    plt.plot(k, avg_c_values, 'b')
     plt.show()
 
 
@@ -25,8 +26,9 @@ if __name__ == '__main__':
     X = np.genfromtxt('cluster_dataset2d.txt', delimiter=',')
     min_c_values = []
     avg_c_values = []
+    k_range = range(2, 10)
 
-    for k in range(2, 10):
+    for k in k_range:
         c_idxs = np.array([])
         for i in range(50):
             while True:
@@ -42,4 +44,4 @@ if __name__ == '__main__':
         print('k: {} -> min: {}, avg: {}'.format(k, np.min(c_idxs), c_idxs.mean()))
         min_c_values.append(np.min(c_idxs))
         avg_c_values.append(c_idxs.mean())
-    plot_results(min_c_values, avg_c_values)
+    plot_results(min_c_values, avg_c_values, k_range)
