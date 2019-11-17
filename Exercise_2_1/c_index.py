@@ -17,8 +17,10 @@ def calculate_C_index(X, clusters):
 
 def plot_results(min_c_values, avg_c_values, k):
     plt.xlim(2, 9)
-    plt.plot(k, min_c_values, 'r')
-    plt.plot(k, avg_c_values, 'b')
+    plt.xlabel('k')
+    plt.plot(k, min_c_values, 'r', label='Min c')
+    plt.plot(k, avg_c_values, 'b', label='Avg c')
+    plt.legend()
     plt.show()
 
 
