@@ -34,6 +34,7 @@ if __name__ == '__main__':
             while True:
                 try:
                     c = KMeans(k)
+                    c.plotting = False
                     c.fit(X)
                     clusters = c.predict(X)
                     c_idxs = np.append(c_idxs, calculate_C_index(X, clusters))

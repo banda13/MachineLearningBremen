@@ -5,8 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+
 class KMeans:
-    
+
     def __init__(self, k=1, epochs=3):
         """ Init stuff
 
@@ -21,10 +22,9 @@ class KMeans:
 
         """
         self.k = k
-        self. epochs = epochs
+        self.epochs = epochs
         self.centroids = []
-
-
+        self.plotting = True
 
     def fit(self, X):
         """Compute k-means clustering.
@@ -40,7 +40,7 @@ class KMeans:
             self.centroids.append(X[rand])
             exclude.append(rand)
         labels = self.predict(X)
-        self.plotResult(labels)
+        self.plotResult(labels, X)
         for i in range(self.epochs):
             sum_X = [0] * self.k
             sum_Y = [0] * self.k
@@ -50,24 +50,16 @@ class KMeans:
             for j in range(len(labels)):
                 sum_X[labels[j]] += X[j][0]
                 sum_Y[labels[j]] += X[j][1]
-                counter[labels[j]] +=1
+                counter[labels[j]] += 1
             if counter.__contains__(0):
                 raise Exception("One or more clusters become empty: restarting the method")
             for l in range(self.k):
-                mean_X[l] = sum_X[l]/counter[l]
-                mean_Y[l] = sum_Y[l]/counter[l]
-                self.centroids[l] = [mean_X[l],mean_Y[l]]
+                mean_X[l] = sum_X[l] / counter[l]
+                mean_Y[l] = sum_Y[l] / counter[l]
+                self.centroids[l] = [mean_X[l], mean_Y[l]]
             labels = self.predict(X)
-            self.plotResult(labels)
-        print(self.centroids)
-
-
-
-
-
-
-
-
+            self.plotResult(labels, X)
+        # print(self.centroids)
 
     def predict(self, X):
         """Predict the closest cluster each sample in X belongs to.
@@ -88,21 +80,27 @@ class KMeans:
             min = 999999
             centr_min = None
             for j in range(len(self.centroids)):
-                distance_centr = np.sqrt(np.power(observation[0]-self.centroids[j][0], 2) + np.power(observation[1]-self.centroids[j][1],2))
+                distance_centr = np.sqrt(
+                    np.power(observation[0] - self.centroids[j][0], 2) + np.power(observation[1] - self.centroids[j][1],
+                                                                                  2))
                 if distance_centr < min:
                     min = distance_centr
                     centr_min = j
             labels.append(centr_min)
         return labels
 
-    def plotResult(self, labels):
+    def plotResult(self, labels, X):
+        if not self.plotting:
+            return
         scatter = plt.scatter([item[0] for item in X], [item[1] for item in X], s=50, c=[item for item in labels])
-        plt.scatter([item[0] for item in self.centroids], [item[1] for item in self.centroids], s=100, c='g', marker='*')
+        plt.scatter([item[0] for item in self.centroids], [item[1] for item in self.centroids], s=100, c='g',
+                    marker='*')
         plt.xlabel("Feature 1")
         plt.ylabel("Feature 2")
         plt.legend(*scatter.legend_elements(), loc="upper right", title="Cluster")
         plt.axis([0, 40, 0, 40])
         plt.show()
+
 
 if __name__ == '__main__':
     # Load data
