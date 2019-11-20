@@ -39,8 +39,9 @@ class KMeans:
             rand = random.choice([i for i in range(len(X)) if i not in exclude])
             self.centroids.append(X[rand])
             exclude.append(rand)
+
         labels = self.predict(X)
-        self.plotResult(labels, X)
+        self.plotResult(labels, X, "Initial situation with random centroids")
         for i in range(self.epochs):
             sum_X = [0] * self.k
             sum_Y = [0] * self.k
@@ -58,7 +59,7 @@ class KMeans:
                 mean_Y[l] = sum_Y[l] / counter[l]
                 self.centroids[l] = [mean_X[l], mean_Y[l]]
             labels = self.predict(X)
-            self.plotResult(labels, X)
+            self.plotResult(labels, X, f"Iteration number {i+1}")
         # print(self.centroids)
 
     def predict(self, X):
@@ -89,12 +90,13 @@ class KMeans:
             labels.append(centr_min)
         return labels
 
-    def plotResult(self, labels, X):
+    def plotResult(self, labels, X, title):
         if not self.plotting:
             return
         scatter = plt.scatter([item[0] for item in X], [item[1] for item in X], s=50, c=[item for item in labels])
         plt.scatter([item[0] for item in self.centroids], [item[1] for item in self.centroids], s=100, c='g',
                     marker='*')
+        plt.title(title)
         plt.xlabel("Feature 1")
         plt.ylabel("Feature 2")
         plt.legend(*scatter.legend_elements(), loc="upper right", title="Cluster")
@@ -108,7 +110,7 @@ if __name__ == '__main__':
     # Instance of the Kmeans class
     while True:
         try:
-            c = KMeans(3)
+            c = KMeans(3,3)
             c.fit(X)
             labels = c.predict(X)
             break
