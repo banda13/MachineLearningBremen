@@ -128,10 +128,14 @@ class Classification:
         result = np.sqrt(result)
         return result
 
-    def distance_measure_of_your_choice_1(self, data_a, data_b, **kwargs):
+    def manhattan_Distance(self, data_a, data_b, **kwargs):
+        
         """Distance metric of your choice"""
 
-        ### YOUR IMPLEMENTATION GOES HERE ###
+        result = 0
+        for i in range(len(data_a)):
+            result += abs(data_a[i]-data_b[i])
+        return result
 
     def chebyshev_distance(self, data_a, data_b, **kwargs):
         """Distance metric of your choice"""
@@ -152,6 +156,7 @@ if __name__ == '__main__':
     scores = []
     """
     i = 1
+<<<<<<< Updated upstream
     while i <=100:
         scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.normalized_euclidean_distance,
                                    n_folds=5, neighbours=i))
@@ -159,4 +164,9 @@ if __name__ == '__main__':
     """
     scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
                                     n_folds=5, neighbors=4))
+=======
+    while i <=2:
+        scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.manhattan_Distance, n_folds=10, neighbors=i))
+        i += 1
+>>>>>>> Stashed changes
     print(scores)
