@@ -135,7 +135,7 @@ class Classification:
         result = np.sqrt(result)
         return result
 
-    def manhattan_Distance(self, data_a, data_b, **kwargs):
+    def manhattan_distance(self, data_a, data_b, **kwargs):
         
         """Distance metric of your choice"""
 
@@ -177,5 +177,13 @@ if __name__ == '__main__':
         avg_score = sum_scores/len(scores[0])
         avg_scores.append(avg_score)
     print(avg_scores)
-    print("The optimal value for k is: %s" % np.argmax(avg_scores))
+    optimal_k = np.argmax(avg_scores)
+    print("The optimal value for k is: %s" % optimal_k)
     plot_results(avg_scores, k)
+    score_manhattan = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.manhattan_distance,
+                                        n_folds=10, neighbors=optimal_k)
+    score_chebyshev = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
+                                        n_folds=10, neighbors=optimal_k)
+    print("Accuracy vector with Manhattan distance: %s" %score_manhattan)
+    print("Accuracy vector with Chebyshev distance: %s" %score_chebyshev)
+
