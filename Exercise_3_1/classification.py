@@ -166,7 +166,7 @@ if __name__ == '__main__':
     i = 1
     while i <=k:
         scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.normalized_euclidean_distance,
-                                   n_folds=5, neighbors=i))
+                                   n_folds=10, neighbors=i))
         i += 1
     print(scores)
 
@@ -177,5 +177,5 @@ if __name__ == '__main__':
         avg_score = sum_scores/len(scores[0])
         avg_scores.append(avg_score)
     print(avg_scores)
-
+    print("The optimal value for k is: %s" % np.argmax(avg_scores))
     plot_results(avg_scores, k)
