@@ -1,8 +1,15 @@
 import numpy as np
 from sklearn.model_selection import KFold
 from sklearn.datasets import load_iris
+import matplotlib.pyplot as plt
 
 
+def plot_results(accuracies, k):
+    plt.xlim(1, k)
+    plt.xlabel('k')
+    plt.plot(range(1,k+1), accuracies, 'r', label='Accuracy')
+    plt.legend()
+    plt.show()
 
 
 class Classification:
@@ -154,19 +161,21 @@ if __name__ == '__main__':
     c = Classification()
     data = load_iris(True)
     scores = []
-    """
+    avg_scores = []
+    k = 100
     i = 1
-<<<<<<< Updated upstream
-    while i <=100:
+    while i <=k:
         scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.normalized_euclidean_distance,
-                                   n_folds=5, neighbours=i))
+                                   n_folds=5, neighbors=i))
         i += 1
-    """
-    scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
-                                    n_folds=5, neighbors=4))
-=======
-    while i <=2:
-        scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.manhattan_Distance, n_folds=10, neighbors=i))
-        i += 1
->>>>>>> Stashed changes
     print(scores)
+
+    for i in range(len(scores)):
+        sum_scores = 0
+        for score in scores[i]:
+            sum_scores += score
+        avg_score = sum_scores/len(scores[0])
+        avg_scores.append(avg_score)
+    print(avg_scores)
+
+    plot_results(avg_scores, k)
