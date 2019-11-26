@@ -102,7 +102,7 @@ class Classification:
                 ind_max = np.argmax(min_Dist)
                 if distance < min_Dist[ind_max]:
                     min_Dist[ind_max] = distance
-                    min_Label[ind_max] = X_train[j]
+                    min_Label[ind_max] = y_train[j]
             unique_labels, count_labels = np.unique(min_Label, return_counts=True)
             max_freq_label = np.argmax(count_labels)
             predicted_Label.append(unique_labels[max_freq_label])
@@ -133,10 +133,14 @@ class Classification:
 
         ### YOUR IMPLEMENTATION GOES HERE ###
 
-    def distance_measure_of_your_choice_2(self, data_a, data_b, **kwargs):
+    def chebyshev_distance(self, data_a, data_b, **kwargs):
         """Distance metric of your choice"""
 
-        ### YOUR IMPLEMENTATION GOES HERE ###
+        distances = []
+        for i in range(len(data_a)):
+            distances.append(np.abs(data_a[i]-data_b[i]))
+
+        return np.max(distances)
 
 
 if __name__ == '__main__':
@@ -146,8 +150,13 @@ if __name__ == '__main__':
     c = Classification()
     data = load_iris(True)
     scores = []
+    """
     i = 1
     while i <=100:
         scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.normalized_euclidean_distance,
-                                   n_folds=10, neighbours=i))
+                                   n_folds=5, neighbours=i))
         i += 1
+    """
+    scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
+                                    n_folds=5, neighbors=4))
+    print(scores)
