@@ -67,7 +67,7 @@ def sse(w, X, y):
     SSE : float
         Sum of squared errors
     """
-    return np.sum((y - predict(w, X))**2)
+    return np.sum((y - predict(w, X))**2)/len(X[1])
 
 
 def dSSEdw(w, X, y):
@@ -90,8 +90,8 @@ def dSSEdw(w, X, y):
         Sum of squared errors
     """
     gradient = [0]*2
-    gradient[0] = -2 * np.sum(y - predict(w, X))
-    gradient[1] = -2 * np.sum((y - predict(w, X)) * X[:,1])
+    gradient[0] = -2/len(X[1]) * np.sum(y - predict(w, X))
+    gradient[1] = -2/len(X[1]) * np.sum((y - predict(w, X)) * X[:,1])
     return gradient
 
 
@@ -102,12 +102,34 @@ if __name__ == "__main__":
     # The other arguments will contain our dataset.
     grad = partial(dSSEdw, X=X, y=y)
     w0 = [-0.5, 0.0]
-    w = gradient_descent(w0,0.0001,grad,100,False)
-    print(w)
-    x = np.linspace(-15, 15, 100)
-    line = w[1]*x+w[0]
-    plt.xlim((-10,10))
-    plt.ylim((-10,10))
-    plt.plot(x, line, '-r', label='linear regression')
-    plt.scatter(X[:,1],y)
+    alpha = [0.0001, 0.001, 0.002, 0.0025]
+
+
+    for i in range(len(alpha)):
+        sse_list = []
+        w = None
+        for j in range(101):
+            w = gradient_descent(w0,alpha[i],grad,j,False)
+            sse_list.append(sse(w, X, y))
+
+        # Plot of the linear regression
+
+        x = np.linspace(-15, 15, 100)
+        line = w[1]*x+w[0]
+        plt.figure()
+        plt.xlim((-10,10))
+        plt.ylim((-10,10))
+        plt.plot(x, line, '-r', label='Linear regression')
+        plt.scatter(X[:,1],y)
+        plt.title("Linear regression with α = %s" %alpha[i])
+
+        # Plot of SSE
+        plt.figure()
+        plt.xlabel("Iterations")
+        plt.ylabel("SSE")
+        plt.plot(range(0,101), sse_list, '-b', label='SSE value vs. number of iterations')
+        plt.title("SSE trend with α = %s" %alpha[i])
     plt.show()
+
+    print("W* is %s" %w)
+
