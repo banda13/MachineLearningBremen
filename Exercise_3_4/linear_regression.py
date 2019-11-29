@@ -67,10 +67,7 @@ def sse(w, X, y):
     SSE : float
         Sum of squared errors
     """
-    sum = 0
-    for i in range(len(y)):
-        sum = sum + np.power(y[i]-(w[0]+w[1]*X[i][1]),2)
-    return sum
+    return np.sum((y - predict(w, X))**2)
 
 
 def dSSEdw(w, X, y):
@@ -93,9 +90,8 @@ def dSSEdw(w, X, y):
         Sum of squared errors
     """
     gradient = [0]*2
-    for i in range(len(y)):
-        gradient[0] += -2 * (y[i] - (w[1] * X[i][1] + w[0]))
-        gradient[1] += -2 * (y[i]-(w[1] *X[i][1] + w[0]))*(X[i][1])
+    gradient[0] = -2 * np.sum(y - predict(w, X))
+    gradient[1] = -2 * np.sum((y - predict(w, X)) * X[:,1])
     return gradient
 
 
@@ -114,5 +110,4 @@ if __name__ == "__main__":
     plt.ylim((-10,10))
     plt.plot(x, line, '-r', label='linear regression')
     plt.scatter(X[:,1],y)
-    plt.figure()
     plt.show()
