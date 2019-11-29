@@ -32,18 +32,18 @@ def gradient_descent(x0, alpha, grad, n_iter=100, return_path=False):
         Path that we took in parameter space
     """
     x = x0.copy()
+    path = []
     for index, cur_x in enumerate(x0):
         iters = 0
         while iters < n_iter:
             prev_x = cur_x
             cur_x = cur_x - alpha * grad(cur_x)
             iters = iters + 1
+            path.append(cur_x)
         x[index] = cur_x
 
-
     if return_path:
-        raise NotImplementedError("Return solution and path")
-        #todo: return path still missing
+        return x, path
     else:
         return x
         #raise NotImplementedError("Return solution")
