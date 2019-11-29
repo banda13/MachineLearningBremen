@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import matplotlib.pyplot as plt
 
-from gradient_descent import gradient_descent
+from Exercise_3_3.gradient_descent import gradient_descent
 
 
 def load_dataset(filename="regression_dataset_1.txt"):
@@ -67,7 +67,10 @@ def sse(w, X, y):
     SSE : float
         Sum of squared errors
     """
-    raise NotImplementedError("sse")
+    sum = 0
+    for i in range(len(y)):
+        sum += np.power(y[i]-(w[i][0]+w[i][1]*X[i]),2)
+    return sum
 
 
 def dSSEdw(w, X, y):
