@@ -176,7 +176,6 @@ if __name__ == '__main__':
             sum_scores += score
         avg_score = sum_scores/len(scores[0])
         avg_scores.append(avg_score)
-    print(avg_scores)
     optimal_k = np.argmax(avg_scores)
     print("The optimal value for k is: %s" % optimal_k)
     plot_results(avg_scores, k)

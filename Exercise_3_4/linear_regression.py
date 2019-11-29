@@ -45,7 +45,7 @@ def predict(w, X):
     y : array, shape (n_samples,)
         Outputs
     """
-    raise NotImplementedError("predict")
+    return w[1]*X[:,1]+w[0]
 
 
 def sse(w, X, y):
@@ -69,7 +69,7 @@ def sse(w, X, y):
     """
     sum = 0
     for i in range(len(y)):
-        sum += np.power(y[i]-(w[i][0]+w[i][1]*X[i]),2)
+        sum = sum + np.power(y[i]-(w[0]+w[1]*X[i][1]),2)
     return sum
 
 
@@ -92,7 +92,11 @@ def dSSEdw(w, X, y):
     g : array, shape (n_features + 1,)
         Sum of squared errors
     """
-    raise NotImplementedError("dSSEdw")
+    gradient = [0]*2
+    for i in range(len(y)):
+        gradient[0] = 2 * (y[i] - (w[1] * X[i][1] + w[0]))
+        gradient[1] = 2*(y[i]-(w[1]*X[i][1]+w[0]))*(-X[i][1])
+    return gradient
 
 
 if __name__ == "__main__":
@@ -101,10 +105,14 @@ if __name__ == "__main__":
     # 'partial' creates a new function-like object that only has one argument.
     # The other arguments will contain our dataset.
     grad = partial(dSSEdw, X=X, y=y)
-
+    w0 = [-0.5, 0.0]
+    w = gradient_descent(w0,0.01,grad,300,False)
+    print(w)
+    x = np.linspace(-15, 15, 100)
+    line = w[1]*x+w[0]
+    plt.xlim((-10,10))
+    plt.ylim((-10,10))
+    plt.plot(x, line, '-r', label='linear regression')
+    plt.scatter(X[:,1],y)
     plt.figure()
-    ax = plt.subplot(111)
-
-    # YOUR CODE GOES HERE
-
     plt.show()

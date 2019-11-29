@@ -40,5 +40,5 @@ def test_numerical_gradient_approximation():
 
 
 if __name__ == "__main__":
-    test_predict()
-    test_numerical_gradient_approximation()
+    print(test_predict())
+    print(test_numerical_gradient_approximation())
