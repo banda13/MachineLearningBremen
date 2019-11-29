@@ -94,8 +94,8 @@ def dSSEdw(w, X, y):
     """
     gradient = [0]*2
     for i in range(len(y)):
-        gradient[0] = 2 * (y[i] - (w[1] * X[i][1] + w[0]))
-        gradient[1] = 2*(y[i]-(w[1]*X[i][1]+w[0]))*(-X[i][1])
+        gradient[0] += -2 * (y[i] - (w[1] * X[i][1] + w[0]))
+        gradient[1] += -2 * (y[i]-(w[1] *X[i][1] + w[0]))*(X[i][1])
     return gradient
 
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     # The other arguments will contain our dataset.
     grad = partial(dSSEdw, X=X, y=y)
     w0 = [-0.5, 0.0]
-    w = gradient_descent(w0,0.01,grad,300,False)
+    w = gradient_descent(w0,0.0001,grad,100,False)
     print(w)
     x = np.linspace(-15, 15, 100)
     line = w[1]*x+w[0]
