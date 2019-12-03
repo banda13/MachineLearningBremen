@@ -67,7 +67,7 @@ def sse(w, X, y):
     SSE : float
         Sum of squared errors
     """
-    return np.sum((y - predict(w, X))**2)/len(X[1])
+    return np.sum((y - predict(w, X))**2)
 
 
 def dSSEdw(w, X, y):
@@ -90,8 +90,8 @@ def dSSEdw(w, X, y):
         Sum of squared errors
     """
     gradient = [0]*2
-    gradient[0] = -2/len(X[1]) * np.sum(y - predict(w, X))
-    gradient[1] = -2/len(X[1]) * np.sum((y - predict(w, X)) * X[:,1])
+    gradient[0] = -2 * np.sum(y - predict(w, X))
+    gradient[1] = -2 * np.sum((y - predict(w, X)) * X[:,1])
     return gradient
 
 
@@ -103,7 +103,6 @@ if __name__ == "__main__":
     grad = partial(dSSEdw, X=X, y=y)
     w0 = [-0.5, 0.0]
     alpha = [0.0001, 0.001, 0.002, 0.0025]
-
 
     for i in range(len(alpha)):
         sse_list = []
