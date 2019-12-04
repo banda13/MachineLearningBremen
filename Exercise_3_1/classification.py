@@ -184,5 +184,14 @@ if __name__ == '__main__':
     score_chebyshev = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
                                         n_folds=10, neighbors=optimal_k)
     print("Accuracy vector with Manhattan distance: %s" %score_manhattan)
+    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_manhattan, label='Manhattan distance')
+    plt.ylim((0, 2))
+    plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    plt.legend()
+    plt.show()
     print("Accuracy vector with Chebyshev distance: %s" %score_chebyshev)
-
+    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_chebyshev, label='Chebyshev distance')
+    plt.ylim((0, 2))
+    plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    plt.legend()
+    plt.show()
