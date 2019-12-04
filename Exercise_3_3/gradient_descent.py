@@ -44,4 +44,4 @@ def gradient_descent(x0, alpha, grad, n_iter=100, return_path=False):
         return x, path
     else:
         return x
-        #raise NotImplementedError("Return solution")
+
