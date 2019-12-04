@@ -98,7 +98,7 @@ def dSSEdw(w, X, y):
 if __name__ == "__main__":
     X, y = load_dataset()
 
-    # Configuration parameters (starting value, learning rate and number of iterations, gradient function)
+    # Configuration parameters (starting value, learning rate, number of iterations and gradient function)
     w0 = [-0.5, 0.0]
     alpha = [0.0001, 0.001, 0.002, 0.0025]
     n_iteration = 100

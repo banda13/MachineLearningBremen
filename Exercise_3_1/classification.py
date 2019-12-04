@@ -203,30 +203,21 @@ if __name__ == '__main__':
     score_chebyshev = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
                                         n_folds=10, neighbors=optimal_k)
     print("Accuracy vector with Manhattan distance: %s" %score_manhattan)
-    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_manhattan, label='Manhattan distance')
+    plt.title("Accuracy vector with Manhattan distance (k=12)")
+    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_manhattan, label='Accuracy')
     plt.ylim((0, 2))
+    plt.xlabel("Folder")
+    plt.ylabel("Accuracy")
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     plt.legend()
     plt.show()
+    plt.title("Accuracy vector with Chebyshev distance (k=12)")
     print("Accuracy vector with Chebyshev distance: %s" %score_chebyshev)
-    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_chebyshev, label='Manhattan distance')
+    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_chebyshev, label='Accuracy')
     plt.ylim((0, 2))
+    plt.xlabel("Folder")
+    plt.ylabel("Accuracy")
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     plt.legend()
     plt.show()
-
-    for i in range(len(score_manhattan)):
-        sum_scores = 0
-        #calculating the average score
-        for score in score_manhattan[i]:
-            sum_scores += score
-        avg_score_manhattan = sum_scores/len(score_manhattan)
-    print("Theavg_score_manhattan is: %s" %avg_score_manhattan)
-    for i in range(len(score_chebyshev)):
-        sum_scores = 0
-        #calculating the average score
-        for score in score_chebyshev[i]:
-            sum_scores += score
-        avg_score_chebyshev = sum_scores/len(score_chebyshev)
-    print("Theavg_score_manhattan is: %s" %avg_score_chebyshev)
 
