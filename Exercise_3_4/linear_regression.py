@@ -2,6 +2,7 @@ from functools import partial
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 from Exercise_3_3.gradient_descent import gradient_descent
 
@@ -94,6 +95,17 @@ def dSSEdw(w, X, y):
     return gradient
 
 
+def mse(w, X, y):
+
+    return np.sum(np.power(y - predict(w, X), 2))/len(X[:, 1])
+
+
+def dMSEdw(w, X, y):
+
+    gradient = [-2/len(X[:, 1]) * np.sum(y - predict(w, X)), -2/len(X[:, 1]) * np.sum((y - predict(w, X)) * X[:, 1])]
+    return gradient
+
+
 if __name__ == "__main__":
     X, y = load_dataset()
 
@@ -123,6 +135,7 @@ if __name__ == "__main__":
 
         # Plot of SSE
         plt.figure()
+        plt.ylim(0, np.max(sse_list))
         plt.xlabel("Iterations")
         plt.ylabel("SSE")
         plt.plot(range(0,n_iteration+1), sse_list, '-b', label='SSE value vs. number of iterations')
