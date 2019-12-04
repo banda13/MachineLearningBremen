@@ -101,20 +101,29 @@ class Classification:
         """
         predicted_Label = []
         st_dev = self.standardDeviation(X_train)
+        #for each sample in the test test (i.e. the first folder)...
         for i in range(len(X_test)):
+            #inizialize the min_dist to infinite and the min_label to None for each neighbors
             min_Dist = [float("inf")] * neighbors
             min_Label = [None] * neighbors
+            #for each sample in the training test (i.e. the set of the others n-1 folders)...
             for j in range(len(X_train)):
+                #calculate the distance between the current test sample and the train sample
                 distance = metric(X_test[i], X_train[j], st_dev=st_dev)
+                #take the index of the corrisponding maximum distance in the array min_Dist (e.g. at the start they are all infinite, so ind_max=0)
                 ind_max = np.argmax(min_Dist)
+                #if the distance calculated above is lower than the one extracted from min_distance we can exchange the values and save the label of j in the min_Label array
                 if distance < min_Dist[ind_max]:
                     min_Dist[ind_max] = distance
                     min_Label[ind_max] = y_train[j]
+            #then we take the most frequent values in the min_Label array and it will be the predicted label for the current sample in the testing set
             unique_labels, count_labels = np.unique(min_Label, return_counts=True)
             max_freq_label = np.argmax(count_labels)
             predicted_Label.append(unique_labels[max_freq_label])
 
         correct_labels = 0
+
+        #calculate the accuracy by checking how many times the predicted label corresponds to the original (correct) one, and dividing by the total number of lable's predictions
 
         for i in range(len(predicted_Label)):
             if predicted_Label[i] == y_test[i]:
@@ -162,23 +171,33 @@ if __name__ == '__main__':
     data = load_iris(True)
     scores = []
     avg_scores = []
-    k = 100
+    k = 134
     i = 1
+
+    #try with different values of neighbors, from i=1 to k (i.e. append in scores the accuracy of each classification with different neighborns)
+    #the apply_k_fold_cv return an array, so that scores will be an array of array at the end of the while (each array has the same dimension of the number of fold in the cv)
     while i <=k:
         scores.append(c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.normalized_euclidean_distance,
                                    n_folds=10, neighbors=i))
         i += 1
     print(scores)
 
+    #for each array in scores calculate the mean of the accuracies
+    #at the end avg_scores will be an array containing the mean accuracies (one for each number of neighbors' number)
     for i in range(len(scores)):
         sum_scores = 0
+        #calculating the average score
         for score in scores[i]:
             sum_scores += score
         avg_score = sum_scores/len(scores[0])
         avg_scores.append(avg_score)
+    #select the optimal number of neighbors, by picking the index of the array with corresponding max element
     optimal_k = np.argmax(avg_scores)
     print("The optimal value for k is: %s" % optimal_k)
+    print("Where the accuracy is: %s" % avg_scores[optimal_k])
+    #plot the scores variation with respect to the size of neighbors
     plot_results(avg_scores, k)
+    #plot the value of the accuracies with manhattan and chebyschev distance with respect to the optimal value of the neighborns (foreach folder in cv)
     score_manhattan = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.manhattan_distance,
                                         n_folds=10, neighbors=optimal_k)
     score_chebyshev = c.apply_k_fold_cv(data[0], data[1], c.kNN_classifier, metric=c.chebyshev_distance,
@@ -190,8 +209,24 @@ if __name__ == '__main__':
     plt.legend()
     plt.show()
     print("Accuracy vector with Chebyshev distance: %s" %score_chebyshev)
-    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_chebyshev, label='Chebyshev distance')
+    plt.bar([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], score_chebyshev, label='Manhattan distance')
     plt.ylim((0, 2))
     plt.xticks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     plt.legend()
     plt.show()
+
+    for i in range(len(score_manhattan)):
+        sum_scores = 0
+        #calculating the average score
+        for score in score_manhattan[i]:
+            sum_scores += score
+        avg_score_manhattan = sum_scores/len(score_manhattan)
+    print("Theavg_score_manhattan is: %s" %avg_score_manhattan)
+    for i in range(len(score_chebyshev)):
+        sum_scores = 0
+        #calculating the average score
+        for score in score_chebyshev[i]:
+            sum_scores += score
+        avg_score_chebyshev = sum_scores/len(score_chebyshev)
+    print("Theavg_score_manhattan is: %s" %avg_score_chebyshev)
+
