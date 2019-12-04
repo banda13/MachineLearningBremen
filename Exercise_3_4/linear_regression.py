@@ -45,7 +45,8 @@ def predict(w, X):
     y : array, shape (n_samples,)
         Outputs
     """
-    return w[1]*X[:,1]+w[0]
+    # h(x) = w0 + w1*x
+    return w[0]+w[1]*X[:, 1]
 
 
 def sse(w, X, y):
@@ -67,7 +68,7 @@ def sse(w, X, y):
     SSE : float
         Sum of squared errors
     """
-    return np.sum((y - predict(w, X))**2)
+    return np.sum(np.power(y - predict(w, X), 2))
 
 
 def dSSEdw(w, X, y):
@@ -89,9 +90,7 @@ def dSSEdw(w, X, y):
     g : array, shape (n_features + 1,)
         Sum of squared errors
     """
-    gradient = [0]*2
-    gradient[0] = -2 * np.sum(y - predict(w, X))
-    gradient[1] = -2 * np.sum((y - predict(w, X)) * X[:, 1])
+    gradient = [-2 * np.sum(y - predict(w, X)), -2 * np.sum((y - predict(w, X)) * X[:, 1])]
     return gradient
 
 
@@ -108,12 +107,12 @@ if __name__ == "__main__":
     for i in range(len(alpha)):
         sse_list = []
         for j in range(n_iteration+1):
-            w = gradient_descent(w0,alpha[i],grad,j,False)
-            sse_list.append(sse(w, X, y))
+            w = gradient_descent(w0, alpha[i], grad, j, False)
+            sse_list = np.append(sse_list, sse(w, X, y))
         w_star[i] = w
 
         # Plot of the linear regression
-        x = np.linspace(-15, 15, 100)
+        x = np.linspace(-15, 15, n_iteration)
         line = w[1]*x+w[0]
         plt.figure()
         plt.xlim((-10,10))
@@ -126,7 +125,7 @@ if __name__ == "__main__":
         plt.figure()
         plt.xlabel("Iterations")
         plt.ylabel("SSE")
-        plt.plot(range(0,101), sse_list, '-b', label='SSE value vs. number of iterations')
+        plt.plot(range(0,n_iteration+1), sse_list, '-b', label='SSE value vs. number of iterations')
         plt.title("SSE trend with α = %s" %alpha[i])
 
     print("Learning Rate ---------------- Optimal value")
