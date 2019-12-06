@@ -8,15 +8,15 @@ from sklearn.svm import SVC
 
 class SVM(object):
 
-    def __init__(self, C=1, kernel='rbf', gamma='scale'):
+    def __init__(self, c=1, kernel='rbf', gamma='scale'):
         """
         Initialize the support vector classifier
-        :param C: regularization parameter
+        :param c: regularization parameter
         :param kernel: kernel type used by the algorithm: linear, poly, rbf, sigmoid or precomputed
         :param gamma: kernel coefficient
         """
 
-        self.classifier = SVC(C=C, kernel=kernel, gamma=gamma)
+        self.classifier = SVC(C=c, kernel=kernel, gamma=gamma)
 
     def load_data(self, first_two_feature=False):
         """
@@ -52,19 +52,22 @@ class SVM(object):
 
     def plot(self):
         fig, ax = plt.subplots()
-        # title for the plots
         title = 'Decision boundaries of SVM'
-        # Set-up grid for plotting.
+
+        # create and set up a meshgrid for plotting
         X0, X1 = self.X_test[:, 0], self.X_test[:, 1]
         xx, yy = self.make_meshgrid(X0, X1)
 
+        # predict the classes and plot the contours
         self.plot_contours(ax, self.classifier, xx, yy, cmap=plt.cm.coolwarm)
+
+        # plot the data points on the grid
         ax.scatter(X0, X1, c=self.y_test, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
         ax.set_title(title)
-
-
         plt.show()
 
+
+# tries every combinations of the lists below, and returns the params which results the highest accuracy
 def find_best_parameter_set(test_iter=100):
     C = [0.5, 1, 1.5]
     kernels = ['linear', 'poly', 'rbf']
@@ -90,8 +93,11 @@ def find_best_parameter_set(test_iter=100):
 
 
 if __name__ == '__main__':
+    # exercise D
     acc, params = find_best_parameter_set()
     print('Best params are {} with accuracy {}'.format(params, acc))
+
+    # exercise E
     svm = SVM(params[0], params[1], params[2])
     svm.load_data(first_two_feature=True)
     svm.train()
