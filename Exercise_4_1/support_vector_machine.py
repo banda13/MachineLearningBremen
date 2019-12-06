@@ -1,4 +1,6 @@
 import itertools
+import numpy as np
+import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
@@ -23,11 +25,11 @@ class SVM(object):
         """
         iris = datasets.load_iris()
         if first_two_feature:
-            X = iris.data[:, :2]
+            self.X = iris.data[:, :2]
         else:
-            X = iris.data
-        y = iris.target
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(X, y, test_size=0.30)
+            self.X = iris.data
+        self.y = iris.target
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(self.X, self.y, test_size=0.30)
 
     def train(self):
         self.classifier.fit(self.X_train, self.y_train)
@@ -36,6 +38,32 @@ class SVM(object):
         scores = self.classifier.score(self.X_test, self.y_test)
         return scores
 
+    def make_meshgrid(self, x, y, h=.02):
+        x_min, x_max = x.min() - 1, x.max() + 1
+        y_min, y_max = y.min() - 1, y.max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        return xx, yy
+
+    def plot_contours(self, ax, clf, xx, yy, **params):
+        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+        out = ax.contourf(xx, yy, Z, **params)
+        return out
+
+    def plot(self):
+        fig, ax = plt.subplots()
+        # title for the plots
+        title = 'Decision boundaries of SVM'
+        # Set-up grid for plotting.
+        X0, X1 = self.X_test[:, 0], self.X_test[:, 1]
+        xx, yy = self.make_meshgrid(X0, X1)
+
+        self.plot_contours(ax, self.classifier, xx, yy, cmap=plt.cm.coolwarm)
+        ax.scatter(X0, X1, c=self.y_test, cmap=plt.cm.coolwarm, s=20, edgecolors='k')
+        ax.set_title(title)
+
+
+        plt.show()
 
 def find_best_parameter_set(test_iter=100):
     C = [0.5, 1, 1.5]
@@ -43,6 +71,8 @@ def find_best_parameter_set(test_iter=100):
     gamma = ['scale', 'auto']
 
     p = [C, kernels, gamma]
+    best_params = None
+    best_accuracy = 0
     print('Params\t\t\t\t\t -> accuracy')
     for param in list(itertools.product(*p)):
         accuracies = []
@@ -51,8 +81,18 @@ def find_best_parameter_set(test_iter=100):
             svm.load_data()
             svm.train()
             accuracies.append(svm.test())
-        print('{} -> {}'.format(param, sum(accuracies) / len(accuracies)))
+        avg_accuracy = sum(accuracies) / len(accuracies)
+        if avg_accuracy > best_accuracy:
+            best_accuracy = avg_accuracy
+            best_params = param
+        print('{} -> {}'.format(param, avg_accuracy))
+    return best_accuracy, best_params
 
 
 if __name__ == '__main__':
-    find_best_parameter_set()
+    acc, params = find_best_parameter_set()
+    print('Best params are {} with accuracy {}'.format(params, acc))
+    svm = SVM(params[0], params[1], params[2])
+    svm.load_data(first_two_feature=True)
+    svm.train()
+    svm.plot()
