@@ -8,15 +8,15 @@ from sklearn.svm import SVC
 
 class SVM(object):
 
-    def __init__(self, c=1, kernel='rbf', gamma='scale'):
+    def __init__(self, C=1, kernel='rbf', gamma='scale'):
         """
         Initialize the support vector classifier
-        :param c: regularization parameter
+        :param C: regularization parameter
         :param kernel: kernel type used by the algorithm: linear, poly, rbf, sigmoid or precomputed
         :param gamma: kernel coefficient
         """
 
-        self.classifier = SVC(C=c, kernel=kernel, gamma=gamma)
+        self.classifier = SVC(C=C, kernel=kernel, gamma=gamma)
 
     def load_data(self, first_two_feature=False):
         """
