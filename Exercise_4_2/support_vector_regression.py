@@ -2,77 +2,38 @@ import numpy as np
 import pandas as pd
 from sklearn.svm import SVR
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
 
 
+class supportVectorRegression(object):
+    def __init__(self, kernel='rbf', C=1, gamma='auto', degree=3, epsilon=.1,coef0=1):
+        self.regressor = SVR(kernel=kernel, C=C, gamma=gamma, degree=degree, epsilon=epsilon,coef0=coef0)
+        self.label = kernel
 
+    def loadData(self, data_path="schwefel.csv"):
+        data = pd.read_csv(data_path)
+        self.X = data.iloc[:, 0:1].values.astype(float).ravel().reshape(-1, 1)
+        self.y = data.iloc[:, 1:2].values.astype(float).ravel()
 
+    def fit(self):
+        self.regressor.fit(self.X, self.y)
+
+    def predict(self):
+        self.prediction = self.regressor.predict(self.X)
+
+    def plotResult(self,color):
+        plt.plot(self.X,self.prediction,color=color,lw=2,label='{} model'.format(self.label))
+        plt.scatter(self.X[self.regressor.support_],self.y[self.regressor.support_], facecolor="none",
+                          edgecolor=color, s=50, label='{} support vectors'.format(self.label))
+        plt.legend(loc='upper center', bbox_to_anchor=(0.8, 0.15),
+                         ncol=1, fancybox=True, shadow=True)
+        plt.title("Support Vector Regression")
+        plt.show()
 
 if __name__ == '__main__':
-    data = pd.read_csv("schwefel.csv")
 
-    #X = data.iloc[:, 0:1].values.astype(float).ravel().reshape(-1, 1)
-    #y = data.iloc[:, 1:2].values.astype(float).ravel()
-
-    # #############################################################################
-    # Generate sample data
-    X = np.sort(5 * np.random.rand(len(data), 1), axis=0)
-    y = data.iloc[:, 0:1].values.astype(float).ravel()
-
-    # #############################################################################
-    # Add noise to targets
-    #y[::5] += 3 * (0.5 - np.random.rand(8))
-
-    # #############################################################################
-    # Fit regression model
-    svr_rbf = SVR(kernel='rbf', C=100, gamma=0.1, epsilon=.1)
-    svr_lin = SVR(kernel='linear', C=100, gamma='auto')
-    svr_poly = SVR(kernel='poly', C=100, gamma='auto', degree=3, epsilon=.1,
-                   coef0=1)
-
-    # #############################################################################
-    # Look at the results
-    lw = 2
-
-    svrs = [svr_rbf, svr_lin, svr_poly]
-    kernel_label = ['RBF', 'Linear', 'Polynomial']
-    model_color = ['m', 'c', 'g']
-
-    fig2, axes2 = plt.subplots(nrows=1, ncols=3, figsize=(15, 10), sharey=True)
-    for ix, svr in enumerate(svrs):
-        axes2[ix].plot(X, svr.fit(X, y).predict(X), color=model_color[ix], lw=lw,
-                       label='{} model'.format(kernel_label[ix]))
-        axes2[ix].scatter(X[svr.support_], y[svr.support_], facecolor="none",
-                          edgecolor=model_color[ix], s=50,
-                          label='{} support vectors'.format(kernel_label[ix]))
-        axes2[ix].scatter(X[np.setdiff1d(np.arange(len(X)), svr.support_)],
-                          y[np.setdiff1d(np.arange(len(X)), svr.support_)],
-                          facecolor="none", edgecolor="k", s=50,
-                          label='other training data')
-        axes2[ix].legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
-                         ncol=1, fancybox=True, shadow=True)
-
-    fig2.text(0.5, 0.04, 'data', ha='center', va='center')
-    fig2.text(0.06, 0.5, 'target', ha='center', va='center', rotation='vertical')
-    fig2.suptitle("Support Vector Regression", fontsize=14)
-    plt.show()
-
-    y = data.iloc[:, 1:2].values.astype(float).ravel()
-    fig2, axes2 = plt.subplots(nrows=1, ncols=3, figsize=(15, 10), sharey=True)
-    for ix, svr in enumerate(svrs):
-        axes2[ix].plot(X, svr.fit(X, y).predict(X), color=model_color[ix], lw=lw,
-                       label='{} model'.format(kernel_label[ix]))
-        axes2[ix].scatter(X[svr.support_], y[svr.support_], facecolor="none",
-                          edgecolor=model_color[ix], s=50,
-                          label='{} support vectors'.format(kernel_label[ix]))
-        axes2[ix].scatter(X[np.setdiff1d(np.arange(len(X)), svr.support_)],
-                          y[np.setdiff1d(np.arange(len(X)), svr.support_)],
-                          facecolor="none", edgecolor="k", s=50,
-                          label='other training data')
-        axes2[ix].legend(loc='upper center', bbox_to_anchor=(0.5, 1.1),
-                         ncol=1, fancybox=True, shadow=True)
-
-    fig2.text(0.5, 0.04, 'data', ha='center', va='center')
-    fig2.text(0.06, 0.5, 'target', ha='center', va='center', rotation='vertical')
-    fig2.suptitle("Support Vector Regression", fontsize=14)
-    plt.show()
+    #to be finished
+    svr = supportVectorRegression(kernel='poly',C=20, degree=2, coef0=1)
+    svr.loadData()
+    svr.fit()
+    svr.predict()
+    svr.plotResult(color='g')
