@@ -81,7 +81,7 @@ class UpperConfidenceBound:
         so called Functor class, making each object created from it executable
         (like a regular function). """
 
-    def __init__(self):  #,..... Add additional parameters
+    def __init__(self, k):
         """ The constructor, taking the hyperparameters for the
             acquisition function.
 
@@ -89,8 +89,7 @@ class UpperConfidenceBound:
         ----------
             ....
         """
-        # YOUR IMPLEMENTATION
-        pass
+        self.k = k
 
 
     def __call__(self, x, model):
@@ -104,10 +103,9 @@ class UpperConfidenceBound:
         model: sklearn.gaussian_process.GaussianProcessRegressor
             The gaussian process regression model for the objective function
         """
-
-        # YOUR IMPLEMENTATION
-        prediction = model.predict(np.array(x).reshape(-1, 1))
-        return 3
+        mu, sigma = model.predict(x.reshape(-1, 1), return_std=True)
+        ucb = mu + self.k * sigma
+        return ucb
 
 
 class ExpectedImprovement:
@@ -117,13 +115,9 @@ class ExpectedImprovement:
         self.xi = xi
 
     def __call__(self, x, model):
-        # mu, sigma = model.predict(self.X, return_std=True)
-        # sigma = sigma.reshape(-1, 1)
-        mu_sample, sigma = model.predict(x.reshape(-1, 1), return_std=True)
-        """
+        mu, sigma = model.predict(self.X, return_std=True)
+        sigma = sigma.reshape(-1, 1)
         mu_sample = model.predict(x.reshape(-1, 1))
-
-        
 
         mu_sample_opt = np.max(mu_sample)
 
@@ -134,9 +128,7 @@ class ExpectedImprovement:
             ei[sigma == 0.0] = 0.0
 
         return ei
-        """
-        ucb = mu_sample + 2 * sigma
-        return ucb
+
 
 def f(x):
     """ The objective function to optimize. Note: Usally this function is not
@@ -160,6 +152,8 @@ if __name__ == "__main__":
         fx.append(f(i))
     plt.scatter(x, fx)
     plt.show()
+    
+    
     # The bayesian optimization main loop
     # YOUR IMPLEMENTATION
     """
@@ -170,8 +164,10 @@ if __name__ == "__main__":
     X_init = np.array([-0.9])
     Y_init = f(X_init)
 
-    optimizer = BayesianOptimizer(ExpectedImprovement(X))
+    optimizer = BayesianOptimizer(UpperConfidenceBound(2))
     for i in range(10):
         optimizer.update_model(X_init[0], Y_init[0])
         X_init = optimizer.get_next_query_point(bounds)
         Y_init = f(X_init)
+
+    print("lets go to kono bar")
