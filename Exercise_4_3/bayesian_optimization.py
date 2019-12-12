@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+from scipy.stats import norm
 from scipy.optimize import minimize
 
 from sklearn.gaussian_process import GaussianProcessRegressor
@@ -73,7 +73,7 @@ class BayesianOptimizer:
         self.y.append(y)
 
         if len(self.X) >= self.initial_random_samples:
-            self.gpr_model.fit(self.X, self.y)
+            self.gpr_model.fit(np.array(self.X).reshape(-1, 1), self.y)
 
 
 class UpperConfidenceBound:
@@ -81,7 +81,7 @@ class UpperConfidenceBound:
         so called Functor class, making each object created from it executable
         (like a regular function). """
 
-    def __init__(self #,..... Add additional parameters):
+    def __init__(self):  #,..... Add additional parameters
         """ The constructor, taking the hyperparameters for the
             acquisition function.
 
@@ -90,6 +90,7 @@ class UpperConfidenceBound:
             ....
         """
         # YOUR IMPLEMENTATION
+        pass
 
 
     def __call__(self, x, model):
@@ -105,6 +106,37 @@ class UpperConfidenceBound:
         """
 
         # YOUR IMPLEMENTATION
+        prediction = model.predict(np.array(x).reshape(-1, 1))
+        return 3
+
+
+class ExpectedImprovement:
+
+    def __init__(self, X, xi=0.01):
+        self.X = X
+        self.xi = xi
+
+    def __call__(self, x, model):
+        # mu, sigma = model.predict(self.X, return_std=True)
+        # sigma = sigma.reshape(-1, 1)
+        mu_sample, sigma = model.predict(x.reshape(-1, 1), return_std=True)
+        """
+        mu_sample = model.predict(x.reshape(-1, 1))
+
+        
+
+        mu_sample_opt = np.max(mu_sample)
+
+        with np.errstate(divide='warn'):
+            imp = mu - mu_sample_opt - self.xi
+            Z = imp / sigma
+            ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
+            ei[sigma == 0.0] = 0.0
+
+        return ei
+        """
+        ucb = mu_sample + 2 * sigma
+        return ucb
 
 def f(x):
     """ The objective function to optimize. Note: Usally this function is not
@@ -121,5 +153,25 @@ def f(x):
 
 
 if __name__ == "__main__":
+    """
+    x = np.linspace(0, 100, num=100)
+    fx = []
+    for i in range(100):
+        fx.append(f(i))
+    plt.scatter(x, fx)
+    plt.show()
     # The bayesian optimization main loop
     # YOUR IMPLEMENTATION
+    """
+    bounds = np.array([-1.0, 2.0])
+
+    X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
+
+    X_init = np.array([-0.9])
+    Y_init = f(X_init)
+
+    optimizer = BayesianOptimizer(ExpectedImprovement(X))
+    for i in range(10):
+        optimizer.update_model(X_init[0], Y_init[0])
+        X_init = optimizer.get_next_query_point(bounds)
+        Y_init = f(X_init)
