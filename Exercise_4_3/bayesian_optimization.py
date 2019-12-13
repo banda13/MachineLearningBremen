@@ -127,7 +127,7 @@ class ExpectedImprovement:
             imp = mu - mu_sample_opt - self.xi
             Z = imp / sigma
             ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
-            # ei[sigma == 0.0] = 0.0
+            ei[sigma == 0.0] = 0.0
 
         return np.max(ei)
 
@@ -145,7 +145,7 @@ class ProbabilityImprovement:
         with np.errstate(divide='warn'):
             Z = (mu - fx_opt - self.xi) / sigma
             pi = norm.cdf(Z)
-            # pi[sigma == 0.0] = 0.0
+            pi[sigma == 0.0] = 0.0
 
         return pi
 
