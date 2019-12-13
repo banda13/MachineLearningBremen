@@ -1,3 +1,5 @@
+from warnings import catch_warnings
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import norm
@@ -74,7 +76,8 @@ class BayesianOptimizer:
         self.y.append(y)
 
         if len(self.X) >= self.initial_random_samples:
-            self.gpr_model.fit(np.array(self.X).reshape(-1, 1), self.y)
+            with catch_warnings():
+                self.gpr_model.fit(np.array(self.X).reshape(-1, 1), self.y)
 
 
 class UpperConfidenceBound:
@@ -117,15 +120,15 @@ class ExpectedImprovement:
     def __call__(self, x, model):
         mu, sigma = model.predict(self.X, return_std=True)
         sigma = sigma.reshape(-1, 1)
-        mu_sample = model.predict(x.reshape(-1, 1))
+        mu_sample, sigma_sample = model.predict(x.reshape(-1, 1), return_std=True)
 
-        mu_sample_opt = np.max(mu_sample)
+        mu_sample_opt = np.max(mu_sample) # or Y_sample
 
         with np.errstate(divide='warn'):
             imp = mu - mu_sample_opt - self.xi
             Z = imp / sigma
             ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
-            ei[sigma == 0.0] = 0.0
+            # ei[sigma == 0.0] = 0.0
 
         return ei
 
@@ -144,7 +147,7 @@ class ProbabilityImprovement:
         with np.errstate(divide='warn'):
             Z = (mu - fx_opt - self.xi) / sigma
             pi = norm.cdf(Z)
-            pi[sigma == 0.0] = 0.0
+            # pi[sigma == 0.0] = 0.0
 
         return pi
 
@@ -163,33 +166,53 @@ def f(x):
                                                                       scale=0.02)
 
 
-if __name__ == "__main__":
 
-    # set the parameters and execute the bayesian optimization
-    iter = 100
-    bounds = np.array([-1, 1])
-    optimizer = BayesianOptimizer(UpperConfidenceBound(4))
-    for i in range(iter):
-        X = optimizer.get_next_query_point(bounds)
-        Y = f(X)
-        optimizer.update_model(X[0], Y[0])
+def plot(x, y, y_pred, optimizer):
+    plt.plot(x, y_pred, 'b-', label='Gaussian process')
+    plt.plot(optimizer.X, optimizer.y, 'r.', markersize=10, label='Query points')
+    plt.plot(x, y, 'r:', label='Objective function')
 
-    # calculate the real and the predicted y-values for each x
-    x = np.atleast_2d(np.linspace(bounds[0], bounds[1], iter)).T
-    y_pred, sigma = optimizer.gpr_model.predict(x, return_std=True)
-    y = f(x)
-
-    # plot the results
-    plt.plot(x, y_pred, 'b-', label='Predictions')
-    plt.plot(optimizer.X, optimizer.y, 'r.', markersize=10, label='Observations')
-    plt.plot(x, y, 'r:', label='f(x)')
-
-    plt.fill(np.concatenate([x, x[::-1]]),
-             np.concatenate([y_pred - 1.9500 * sigma,
-                             (y_pred + 1.9500 * sigma)[::-1]]),
-             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+    # plt.fill(np.concatenate([x, x[::-1]]),
+    #        np.concatenate([y_pred - 1.9500 * sigma,
+    #                        (y_pred + 1.9500 * sigma)[::-1]]),
+    #        alpha=.5, fc='b', ec='None', label='95% confidence interval')
 
     plt.xlabel('$x$')
     plt.ylabel('$f(x)$')
     plt.legend()
     plt.show()
+
+if __name__ == "__main__":
+
+    # set the parameters and execute the bayesian optimization
+    iter = 20
+    bounds = np.array([-1, 1])
+
+    ucb_optimizer = BayesianOptimizer(UpperConfidenceBound(2.5))
+    for i in range(iter):
+        X = ucb_optimizer.get_next_query_point(bounds)
+        Y = f(X)
+        ucb_optimizer.update_model(X[0], Y[0])
+
+    # calculate the real and the predicted y-values for each x
+    x = np.atleast_2d(np.linspace(bounds[0], bounds[1], iter)).T
+    y_pred, sigma = ucb_optimizer.gpr_model.predict(x, return_std=True)
+    y = f(x)
+
+    # plot the results
+    plot(x, y, y_pred, ucb_optimizer)
+
+
+    """
+    # Bayesian optimization with expected improvement acquistion function
+
+    X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
+    ei_optimizer = BayesianOptimizer(ExpectedImprovement(X))
+    for i in range(iter):
+        X = ei_optimizer.get_next_query_point(bounds)
+        Y = f(X)
+        ei_optimizer.update_model(X[0], Y[0])
+    y_pred, sigma = ei_optimizer.gpr_model.predict(X, return_std=True)
+    y = f(X)
+    plot(X, y, y_pred, ei_optimizer)
+    """
