@@ -52,7 +52,7 @@ class BayesianOptimizer:
             x_query = np.asarray([self.rng.uniform(low=bounds[0],
                                                    high=bounds[1])])
         else:
-            objective_fun = lambda x: -self.acquisition_function(x=x, model=self.gpr_model)
+            objective_fun = lambda x: -self.acquisition_function(x=x, x_max=np.argmax(self.X), model=self.gpr_model)
 
             result = minimize(fun=objective_fun, x0=self.x0,
                               method='L-BFGS-B', bounds=[bounds])
@@ -95,7 +95,7 @@ class UpperConfidenceBound:
         """
         self.k = k
 
-    def __call__(self, x, model):
+    def __call__(self, x, x_max, model):
         """__call__: This method makes any object from the class callable like
            a regular function.
 
@@ -113,14 +113,13 @@ class UpperConfidenceBound:
 
 class ExpectedImprovement:
 
-    def __init__(self, X, xi=0.01):
-        self.X = X
+    def __init__(self,xi=0.01):
         self.xi = xi
 
-    def __call__(self, x, model):
-        mu, sigma = model.predict(self.X, return_std=True)
+    def __call__(self, x, x_max, model):
+        mu, sigma = model.predict(x_max.reshape(-1, 1), return_std=True)
         sigma = sigma.reshape(-1, 1)
-        mu_sample, sigma_sample = model.predict(x.reshape(-1, 1), return_std=True)
+        mu_sample = model.predict(x.reshape(-1, 1))
 
         mu_sample_opt = np.max(mu_sample) # or Y_sample
 
@@ -130,7 +129,7 @@ class ExpectedImprovement:
             ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
             # ei[sigma == 0.0] = 0.0
 
-        return ei
+        return np.max(ei)
 
 
 class ProbabilityImprovement:
@@ -203,16 +202,15 @@ if __name__ == "__main__":
     plot(x, y, y_pred, ucb_optimizer)
 
 
-    """
+
     # Bayesian optimization with expected improvement acquistion function
 
     X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
-    ei_optimizer = BayesianOptimizer(ExpectedImprovement(X))
+    ei_optimizer = BayesianOptimizer(ExpectedImprovement())
     for i in range(iter):
-        X = ei_optimizer.get_next_query_point(bounds)
-        Y = f(X)
-        ei_optimizer.update_model(X[0], Y[0])
+        x = ei_optimizer.get_next_query_point(bounds)
+        Y = f(x)
+        ei_optimizer.update_model(x[0], Y[0])
     y_pred, sigma = ei_optimizer.gpr_model.predict(X, return_std=True)
     y = f(X)
     plot(X, y, y_pred, ei_optimizer)
-    """
