@@ -145,29 +145,32 @@ def f(x):
 
 
 if __name__ == "__main__":
-    """
-    x = np.linspace(0, 100, num=100)
-    fx = []
-    for i in range(100):
-        fx.append(f(i))
-    plt.scatter(x, fx)
+
+    # set the parameters and execute the bayesian optimization
+    iter = 50
+    bounds = np.array([-1, 1])
+    optimizer = BayesianOptimizer(UpperConfidenceBound(10))
+    for i in range(iter):
+        X = optimizer.get_next_query_point(bounds)
+        Y = f(X)
+        optimizer.update_model(X[0], Y[0])
+
+    # calculate the real and the predicted y-values for each x
+    x = np.atleast_2d(np.linspace(bounds[0], bounds[1], iter)).T
+    y_pred, sigma = optimizer.gpr_model.predict(x, return_std=True)
+    y = f(x)
+
+    # plot the results
+    plt.plot(x, y_pred, 'b-', label='Predictions')
+    plt.plot(optimizer.X, optimizer.y, 'r.', markersize=10, label='Observations')
+    plt.plot(x, y, 'r:', label='f(x)')
+
+    plt.fill(np.concatenate([x, x[::-1]]),
+             np.concatenate([y_pred - 1.9600 * sigma,
+                             (y_pred + 1.9600 * sigma)[::-1]]),
+             alpha=.5, fc='b', ec='None', label='95% confidence interval')
+
+    plt.xlabel('$x$')
+    plt.ylabel('$f(x)$')
+    plt.legend()
     plt.show()
-    
-    
-    # The bayesian optimization main loop
-    # YOUR IMPLEMENTATION
-    """
-    bounds = np.array([-1.0, 2.0])
-
-    X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
-
-    X_init = np.array([-0.9])
-    Y_init = f(X_init)
-
-    optimizer = BayesianOptimizer(UpperConfidenceBound(2))
-    for i in range(10):
-        optimizer.update_model(X_init[0], Y_init[0])
-        X_init = optimizer.get_next_query_point(bounds)
-        Y_init = f(X_init)
-
-    print("lets go to kono bar")
