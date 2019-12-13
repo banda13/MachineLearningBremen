@@ -113,7 +113,7 @@ class UpperConfidenceBound:
 
 class ExpectedImprovement:
 
-    def __init__(self,xi=0.01):
+    def __init__(self, xi=0.01):
         self.xi = xi
 
     def __call__(self, x, x_max, model):
@@ -121,7 +121,7 @@ class ExpectedImprovement:
         sigma = sigma.reshape(-1, 1)
         mu_sample = model.predict(x.reshape(-1, 1))
 
-        mu_sample_opt = np.max(mu_sample) # or Y_sample
+        mu_sample_opt = np.max(mu_sample)  # or Y_sample
 
         with np.errstate(divide='warn'):
             imp = mu - mu_sample_opt - self.xi
@@ -164,8 +164,7 @@ def f(x):
                                                                       scale=0.02)
 
 
-
-def plot(x, y, y_pred, optimizer):
+def plot(x, y, y_pred, optimizer, title):
     plt.plot(x, y_pred, 'b-', label='Gaussian process')
     plt.plot(optimizer.X, optimizer.y, 'r.', markersize=10, label='Query points')
     plt.plot(x, y, 'r:', label='Objective function')
@@ -177,8 +176,10 @@ def plot(x, y, y_pred, optimizer):
 
     plt.xlabel('$x$')
     plt.ylabel('$f(x)$')
+    plt.title(title)
     plt.legend()
     plt.show()
+
 
 if __name__ == "__main__":
 
@@ -198,7 +199,7 @@ if __name__ == "__main__":
     y = f(x)
 
     # plot the results
-    plot(x, y, y_pred, ucb_optimizer)
+    plot(x, y, y_pred, ucb_optimizer, 'Upper confidence bound')
 
     # Bayesian optimization with expected improvement acquistion function
     X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
@@ -209,15 +210,15 @@ if __name__ == "__main__":
         ei_optimizer.update_model(x[0], Y[0])
     y_pred, sigma = ei_optimizer.gpr_model.predict(X, return_std=True)
     y = f(X)
-    plot(X, y, y_pred, ei_optimizer)
+    plot(X, y, y_pred, ei_optimizer, 'Expected Improvement')
 
     # Bayesian optimization with probability improvement acquistion function
     X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
-    ei_optimizer = BayesianOptimizer(ExpectedImprovement())
+    ei_optimizer = BayesianOptimizer(ProbabilityImprovement())
     for i in range(iter):
         x = ei_optimizer.get_next_query_point(bounds)
         Y = f(x)
         ei_optimizer.update_model(x[0], Y[0])
     y_pred, sigma = ei_optimizer.gpr_model.predict(X, return_std=True)
     y = f(X)
-    plot(X, y, y_pred, ei_optimizer)
+    plot(X, y, y_pred, ei_optimizer, 'Probability Improvement')
