@@ -134,12 +134,11 @@ class ExpectedImprovement:
 
 class ProbabilityImprovement:
 
-    def __init__(self, X, xi=0.01):
-        self.X = X
+    def __init__(self, xi=0.01):
         self.xi = xi
 
-    def __call__(self, x, model):
-        mu, sigma = model.predict(self.X, return_std=True)
+    def __call__(self, x, x_max, model):
+        mu, sigma = model.predict(x_max.reshape(-1, 1), return_std=True)
         sigma = sigma.reshape(-1, 1)
         fx_opt = np.max(model.predict(x.reshape(-1, 1)))
 
@@ -201,10 +200,18 @@ if __name__ == "__main__":
     # plot the results
     plot(x, y, y_pred, ucb_optimizer)
 
-
-
     # Bayesian optimization with expected improvement acquistion function
+    X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
+    ei_optimizer = BayesianOptimizer(ExpectedImprovement())
+    for i in range(iter):
+        x = ei_optimizer.get_next_query_point(bounds)
+        Y = f(x)
+        ei_optimizer.update_model(x[0], Y[0])
+    y_pred, sigma = ei_optimizer.gpr_model.predict(X, return_std=True)
+    y = f(X)
+    plot(X, y, y_pred, ei_optimizer)
 
+    # Bayesian optimization with probability improvement acquistion function
     X = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
     ei_optimizer = BayesianOptimizer(ExpectedImprovement())
     for i in range(iter):
