@@ -129,6 +129,23 @@ class ExpectedImprovement:
 
         return ei
 
+class ProbabilityImprovement:
+
+    def __init__(self, X, xi=0.01):
+        self.X = X
+        self.xi = xi
+
+    def __call__(self, x, model):
+        mu, sigma = model.predict(self.X, return_std=True)
+        sigma = sigma.reshape(-1, 1)
+        fx_opt = np.max(model.predict(x.reshape(-1, 1)))
+
+        with np.errstate(divide='warn'):
+            Z = (mu - fx_opt - self.xi) / sigma
+            pi = norm.cdf(Z)
+            pi[sigma == 0.0] = 0.0
+
+        return pi
 
 def f(x):
     """ The objective function to optimize. Note: Usally this function is not
