@@ -16,11 +16,13 @@ class supportVectorRegression(object):
         self.y = data.iloc[:, 1:2].values.astype(float)
 
     def fit(self):
+
         sc_X = StandardScaler()
         sc_y = StandardScaler()
         self.X = sc_X.fit_transform(self.X)
         self.y = sc_y.fit_transform(self.y).ravel()
-        self.regressor.fit(self.X, self.y)
+
+        self.regressor.fit(self.X, self.y.ravel())
 
     def predict(self):
         self.prediction = self.regressor.predict(self.X)
@@ -29,6 +31,10 @@ class supportVectorRegression(object):
         plt.plot(self.X, self.prediction, color=color, lw=2, label='{} model'.format(self.kernel_type))
         plt.scatter(self.X[self.regressor.support_], self.y[self.regressor.support_], facecolor="none",
                     edgecolor=color, s=50, label='{} support vectors'.format(self.kernel_type))
+        plt.scatter(self.X[np.setdiff1d(np.arange(len(self.X)), self.regressor.support_)],
+                     self.y[np.setdiff1d(np.arange(len(self.X)), self.regressor.support_)],
+                     facecolor="none", edgecolor="k", s=50,
+                     label='other training data')
         plt.legend(loc='upper center', bbox_to_anchor=(0.8, 0.15),
                    ncol=1, fancybox=True, shadow=True)
         plt.title(self.kernel_type+" support vector regression")
@@ -37,9 +43,13 @@ class supportVectorRegression(object):
 
 if __name__ == '__main__':
     # a)
-    svrPoly = supportVectorRegression(kernel='poly', C=100, gamma='auto', degree=5, epsilon=.1, coef0=1)
-    svrRBF = supportVectorRegression()
-    svrLinear = supportVectorRegression(kernel='linear')
+    C = 10000
+    epsilon = 0.1
+    gamma = 5
+
+    svrPoly = supportVectorRegression(kernel='poly', C=C, gamma=gamma, degree=3, epsilon=epsilon, coef0=1)
+    svrRBF = supportVectorRegression(C=C, epsilon=epsilon, gamma=gamma)
+    svrLinear = supportVectorRegression(kernel='linear', C=C, epsilon=epsilon, gamma=gamma)
 
     #svr execution and plotting results
     svrs = [('m', svrPoly), ('c', svrRBF), ('g', svrLinear)]

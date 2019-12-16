@@ -129,7 +129,7 @@ class ExpectedImprovement:
             ei = imp * norm.cdf(Z) + sigma * norm.pdf(Z)
             ei[sigma == 0.0] = 0.0
 
-        return np.max(ei)
+        return -np.max(ei)
 
 
 class ProbabilityImprovement:
@@ -147,7 +147,7 @@ class ProbabilityImprovement:
             pi = norm.cdf(Z)
             pi[sigma == 0.0] = 0.0
 
-        return pi
+        return -pi
 
 
 def f(x):
@@ -184,9 +184,10 @@ def plot(x, y, y_pred, optimizer, title):
 if __name__ == "__main__":
 
     # set the parameters and execute the bayesian optimization
-    iter = 20
+    iter = 50
     bounds = np.array([-1, 1])
 
+    x = np.arange(bounds[0], bounds[1], 0.01).reshape(-1, 1)
     ucb_optimizer = BayesianOptimizer(UpperConfidenceBound(2.5))
     for i in range(iter):
         X = ucb_optimizer.get_next_query_point(bounds)
@@ -194,7 +195,7 @@ if __name__ == "__main__":
         ucb_optimizer.update_model(X[0], Y[0])
 
     # calculate the real and the predicted y-values for each x
-    x = np.atleast_2d(np.linspace(bounds[0], bounds[1], iter)).T
+    #x = np.atleast_2d(np.linspace(bounds[0], bounds[1], iter)).T
     y_pred, sigma = ucb_optimizer.gpr_model.predict(x, return_std=True)
     y = f(x)
 
