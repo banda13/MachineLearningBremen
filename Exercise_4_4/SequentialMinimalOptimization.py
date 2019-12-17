@@ -212,13 +212,14 @@ class SMO:
 
         return 1
 
-    def plot_decision_boundary(self, ax, resolution=100, colors=('b', 'k', 'r'), levels=(-1, 0, 1)):
+    def plot_decision_boundary(self, ax, dataset, kernel, resolution=100, colors=('b', 'k', 'r'), levels=(-1, 0, 1)):
         """Plots the model's decision boundary on the input axes object.
         Range of decision boundary grid is determined by the training data.
         Returns decision boundary grid and axes object (`grid`, `ax`)."""
 
         # Generate coordinate grid of shape [resolution x resolution]
         # and evaluate the model over the entire space
+        plt.title("SVM with SMO, dataset: {}, kernel: {}".format(dataset, kernel))
         plt.scatter(self.X[:, 0], self.X[:, 1], c=self.y, s=30, cmap=plt.cm.Paired)
 
         # plot the decision function
@@ -262,7 +263,7 @@ if __name__ == "__main__":
         - kernel : kernel to use for SMO (possibilities: "linear", "gaussian")
     """
 
-    C = 1.
+    C = 10.
     tol = 0.01
     eps = 0.05
     dataset = "exercise_sheet"
@@ -272,4 +273,4 @@ if __name__ == "__main__":
 
     if smo.mainRoutine():
         fig, ax = plt.subplots()
-        smo.plot_decision_boundary(ax)
+        smo.plot_decision_boundary(ax, dataset, kernel)
