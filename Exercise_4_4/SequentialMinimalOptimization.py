@@ -9,6 +9,19 @@ def linearKernel(x, y, b=1):
     return x @ y.T + b
 
 
+def gaussian_kernel(x, y, sigma=1):
+    """Returns the gaussian similarity of arrays `x` and `y` with
+    kernel width parameter `sigma` (set to 1 by default)."""
+
+    if np.ndim(x) == 1 and np.ndim(y) == 1:
+        result = np.exp(- (np.linalg.norm(x - y, 2)) ** 2 / (2 * sigma ** 2))
+    elif (np.ndim(x) > 1 and np.ndim(y) == 1) or (np.ndim(x) == 1 and np.ndim(y) > 1):
+        result = np.exp(- (np.linalg.norm(x - y, 2, axis=1) ** 2) / (2 * sigma ** 2))
+    elif np.ndim(x) > 1 and np.ndim(y) > 1:
+        result = np.exp(- (np.linalg.norm(x[:, np.newaxis] - y[np.newaxis, :], 2, axis=2) ** 2) / (2 * sigma ** 2))
+    return result
+
+
 def load_data(filename):
     data = pd.read_csv(filename, sep=";")
     X = data.iloc[:, 0:2].values.astype(float)
@@ -51,7 +64,7 @@ class SMOmodel:
         r_2 = E_2 * y_2
 
         if (r_2 < - self.tol and alpha_2 < self.C) or (r_2 > self.tol and alpha_2 > 0):
-            num = len(self.alphas[(self.alphas > 0) & (self.alphas < self.C)])
+            num = len(self.alphas[(self.alphas != 0) & (self.alphas != self.C)])
             if num > 1:
                 if E_2 > 0:
                     i_1 = np.argmin(self.errors)
@@ -62,7 +75,7 @@ class SMOmodel:
 
             random_indices = np.random.permutation(len(self.y))
             for i_1 in random_indices:
-                if self.alphas[i_1] > 0 and self.alphas[i_1] < self.C:
+                if self.alphas[i_1] != 0 and self.alphas[i_1] != self.C:
                     if self.takeStep(i_1, i_2):
                         return 1
 
@@ -116,7 +129,7 @@ class SMOmodel:
             else:
                 new_alpha_2 = alpha_2
 
-        if (np.abs(new_alpha_2 - alpha_2) < self.eps * (new_alpha_2 + alpha_2 + self.eps)):
+        if np.abs(new_alpha_2 - alpha_2) < self.eps * (new_alpha_2 + alpha_2 + self.eps):
             return 0
 
         new_alpha_1 = alpha_1 + s * (alpha_2 - new_alpha_2)
@@ -184,7 +197,7 @@ if __name__ == "__main__":
     y_train[y_train == 0] = -1
     """
 
-    C = 2.
+    C = 1.0
     m = len(X_train)
     alphas = np.zeros(m)
     errors = np.zeros(m)
@@ -205,7 +218,7 @@ if __name__ == "__main__":
                 numChanged += model.examineExample(i)
         else:
             for i in range(len(X_train)):
-                if model.alphas[i] > 0 and model.alphas[i] < model.C:
+                if model.alphas[i] != 0 and model.alphas[i] != model.C:
                     numChanged += model.examineExample(i)
         if examineAll == 1:
             examineAll = 0
