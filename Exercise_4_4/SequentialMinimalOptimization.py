@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from sklearn.datasets import make_blobs
+from sklearn.datasets import make_blobs, make_moons, make_circles
 from sklearn.preprocessing import StandardScaler
 
 
@@ -29,21 +29,44 @@ def load_data(filename):
     return X, y
 
 
-class SMOmodel:
+class SMO:
 
-    def __init__(self, X, y, C, kernel, alphas, b, errors, tol, eps):
-        self.X = X  # training data vector
-        self.y = y  # class label vector
-        self.C = C  # regularization parameter
-        self.kernel = kernel  # kernel function
-        self.alphas = alphas  # lagrange multiplier vector
-        self.b = b  # scalar bias term
-        self.errors = errors  # error cache
-        self.tol = tol  # error tolerance
+    def __init__(self, dataset, C, kernel, tol, eps):
+        self.X, self.y = self.chooseDataset(dataset)  # data and label
+        self.C = C  # Regularization parameter
+        self.kernel = self.chooseKernel(kernel)  # kernel function
+        self.alphas = np.zeros(len(self.X))  # Lagrange multiplier vector
+        self.b = 0.0  # bias
+        self.errors = self.evaluate(self.X) - self.y  # error cache
+        self.tol = tol  # KKT tolerance
         self.eps = eps  # alpha tolerance
-        self.w = np.zeros(len(X[0, :]))
+        self.w = np.zeros(len(self.X[0, :]))  # w vector
+
+
+    def chooseDataset(self, dataset_name):
+        if dataset_name == "circle":
+            X_train, y_train = make_circles(n_samples=500, noise=0.1, factor=0.1, random_state=1)
+            scaler = StandardScaler()
+            scaler.fit_transform(X_train, y_train)
+            y_train[y_train == 0] = -1
+        elif dataset_name == "moon":
+            X_train, y_train = make_moons(n_samples=500, noise=0.1, random_state=1)
+            scaler = StandardScaler()
+            scaler.fit_transform(X_train, y_train)
+            y_train[y_train == 0] = -1
+        else:
+            X_train, y_train = load_data("smo_dataset.csv")
+
+        return X_train, y_train
+
+    def chooseKernel(self, kernel_name):
+        if kernel_name == "linear":
+            return linearKernel
+        else:
+            return gaussian_kernel
 
     def objectiveFunction(self, alphas=None):
+        """Returns the objective function of the SVM"""
         if alphas is None:
             alphas = self.alphas
         sum_1 = np.sum(alphas)
@@ -54,17 +77,40 @@ class SMOmodel:
         return sum_1 - sum_2
 
     def evaluate(self, X_test):
-        result = (self.alphas * self.y) @ self.kernel(self.X, X_test) - self.b
-        return result
+        """Applies the SVM decision function to the X_test features vector"""
+        return (self.alphas * self.y) @ self.kernel(self.X, X_test) - self.b
+
+    def mainRoutine(self):
+        """Applies the Main Routine of SMO algorithm"""
+        numChanged = 0
+        examineAll = 1
+        while numChanged > 0 or examineAll:
+            numChanged = 0
+            if examineAll:
+                for i in range(len(self.X)):
+                    numChanged += self.examineExample(i)
+            else:
+                for i in range(len(self.X)):
+                    if self.alphas[i] != 0 and self.alphas[i] != self.C:
+                        numChanged += self.examineExample(i)
+            if examineAll == 1:
+                examineAll = 0
+            elif numChanged == 0:
+                examineAll = 1
+
+        return True
 
     def examineExample(self, i_2):
-
+        """Applies the Examine Example procedure of SMO algorithm"""
         y_2 = self.y[i_2]
         alpha_2 = self.alphas[i_2]
         E_2 = self.errors[i_2]
         r_2 = E_2 * y_2
 
+        # KKT conditions
         if (r_2 < - self.tol and alpha_2 < self.C) or (r_2 > self.tol and alpha_2 > 0):
+            # Hierarchy of Heuristics
+            # 1st heuristic
             num = len(self.alphas[(self.alphas != 0) & (self.alphas != self.C)])
             if num > 1:
                 if E_2 > 0:
@@ -74,12 +120,14 @@ class SMOmodel:
                 if self.takeStep(i_1, i_2):
                     return 1
 
+            # 2nd heuristic: "Loop through non-zero and non-C alphas, starting at a random point"
             random_indices = np.random.permutation(len(self.y))
             for i_1 in random_indices:
                 if self.alphas[i_1] != 0 and self.alphas[i_1] != self.C:
                     if self.takeStep(i_1, i_2):
                         return 1
 
+            # 3rd heuristic: "Loop through all alphas, starting at a random point"
             random_indices = np.random.permutation(len(self.y))
             for i_1 in random_indices:
                 if self.takeStep(i_1, i_2):
@@ -98,25 +146,28 @@ class SMOmodel:
         E_1 = self.errors[i_1]
         E_2 = self.errors[i_2]
         s = y_1 * y_2
+        # Choosing the bound for new_alpha_2
         if y_1 != y_2:
             L = max(0, alpha_2 - alpha_1)
             H = min(self.C, self.C + alpha_2 - alpha_1)
         else:
             L = max(0, alpha_2 + alpha_1 - self.C)
             H = min(self.C, alpha_2 + alpha_1)
-        if (L == H):
+        if L == H:
             return 0
+
         k_11 = self.kernel(self.X[i_1], self.X[i_1])
         k_12 = self.kernel(self.X[i_1], self.X[i_2])
         k_22 = self.kernel(self.X[i_2], self.X[i_2])
-
-        eta = k_11 + k_22 - 2 * k_12
-        if eta > 0:
-            new_alpha_2 = alpha_2 + y_2 * (E_1 - E_2) / eta
+        # second derivative of the objective function along the diagonal line
+        second_derivative = k_11 + k_22 - 2 * k_12
+        if second_derivative > 0:
+            new_alpha_2 = alpha_2 + y_2 * (E_1 - E_2) / second_derivative
             if new_alpha_2 >= H:
                 new_alpha_2 = H
             elif new_alpha_2 <= L:
                 new_alpha_2 = L
+        # Handling the case of non positive second derivative
         else:
             alpha_adj = self.alphas.copy()
             alpha_adj[i_2] = L
@@ -133,8 +184,10 @@ class SMOmodel:
         if np.abs(new_alpha_2 - alpha_2) < self.eps * (new_alpha_2 + alpha_2 + self.eps):
             return 0
 
+        # Calculating the new_alpha_1
         new_alpha_1 = alpha_1 + s * (alpha_2 - new_alpha_2)
 
+        # Updating the threshold
         b_1 = E_1 + y_1 * (new_alpha_1 - alpha_1) * k_11 + y_2 * (new_alpha_2 - alpha_2) * k_12 + self.b
         b_2 = E_2 + y_1 * (new_alpha_1 - alpha_1) * k_12 + y_2 * (new_alpha_2 - alpha_2) * k_22 + self.b
         if 0 < new_alpha_1 < self.C:
@@ -145,13 +198,17 @@ class SMOmodel:
             new_b = (b_1 + b_2) * 0.5
 
         self.b = new_b
-        new_w = self.w + y_1 * (new_alpha_1 - alpha_1) * self.X[i_1, :] + y_2 * (new_alpha_2 - alpha_2) * self.X[i_2, :]
-        self.w = new_w
-
-        self.errors = self.evaluate(self.X) - self.y
-
         self.alphas[i_1] = new_alpha_1
         self.alphas[i_2] = new_alpha_2
+
+        # updating w if the SVM is linear
+        if self.kernel is linearKernel:
+            new_w = self.w + y_1 * (new_alpha_1 - alpha_1) * self.X[i_1, :] + y_2 * (new_alpha_2 - alpha_2) * self.X[i_2, :]
+            self.w = new_w
+
+        # updating the error cache
+        self.errors = self.evaluate(self.X) - self.y
+
 
         return 1
 
@@ -186,45 +243,33 @@ class SMOmodel:
         plt.show()
 
 
+
 if __name__ == "__main__":
 
-    X_train, y_train = load_data("smo_dataset.csv")
-
+    """ 
+    Configuration parameters
+        
+        - C: Regularization parameter --> More C is higher and more the method will prefer to avoid the violations
+                                          and the margin will be more thin
+                                          
+        - tol: tolerance for respect of KKT conditions (scikit-learn has 0.01 as default)
+        
+        - eps: alpha tolerance
+        
+        - dataset: dataset on which apply the SMO (possibilities: "exercise_sheet", "moons", "circle") 
+                                                    N.B. Last two datasets are from scikit-learn
+                                                    
+        - kernel : kernel to use for SMO (possibilities: "linear", "gaussian")
     """
-    X_train, y_train = make_blobs(n_samples=1000, centers=2,
-                            n_features=2, random_state=1)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train, y_train)
-    y_train[y_train == 0] = -1
-    """
 
-    C = 1
-    m = len(X_train)
-    alphas = np.zeros(m)
-    errors = np.zeros(m)
-    b = 0.0
-    tol = 0.05
-    eps = 0.01
+    C = 1.
+    tol = 0.01
+    eps = 0.05
+    dataset = "exercise_sheet"
+    kernel = "linear"
 
-    model = SMOmodel(X_train, y_train, C, gaussian_kernel, alphas, b, errors, tol, eps)
-    initial_error = model.evaluate(model.X) - model.y
-    model.errors = initial_error
+    smo = SMO(dataset, C, kernel, tol, eps)
 
-    numChanged = 0
-    examineAll = 1
-    while numChanged > 0 or examineAll:
-        numChanged = 0
-        if examineAll:
-            for i in range(len(X_train)):
-                numChanged += model.examineExample(i)
-        else:
-            for i in range(len(X_train)):
-                if model.alphas[i] != 0 and model.alphas[i] != model.C:
-                    numChanged += model.examineExample(i)
-        if examineAll == 1:
-            examineAll = 0
-        elif numChanged == 0:
-            examineAll = 1
-
-    fig, ax = plt.subplots()
-    model.plot_decision_boundary(ax)
+    if smo.mainRoutine():
+        fig, ax = plt.subplots()
+        smo.plot_decision_boundary(ax)
