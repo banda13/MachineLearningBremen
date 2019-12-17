@@ -54,7 +54,8 @@ class SMOmodel:
         return sum_1 - sum_2
 
     def evaluate(self, X_test):
-        return self.w @ X_test.T - self.b
+        result = (self.alphas * self.y) @ self.kernel(self.X, X_test) - self.b
+        return result
 
     def examineExample(self, i_2):
 
@@ -197,15 +198,15 @@ if __name__ == "__main__":
     y_train[y_train == 0] = -1
     """
 
-    C = 1.0
+    C = 1
     m = len(X_train)
     alphas = np.zeros(m)
     errors = np.zeros(m)
     b = 0.0
-    tol = 0.01
+    tol = 0.05
     eps = 0.01
 
-    model = SMOmodel(X_train, y_train, C, linearKernel, alphas, b, errors, tol, eps)
+    model = SMOmodel(X_train, y_train, C, gaussian_kernel, alphas, b, errors, tol, eps)
     initial_error = model.evaluate(model.X) - model.y
     model.errors = initial_error
 
@@ -225,6 +226,5 @@ if __name__ == "__main__":
         elif numChanged == 0:
             examineAll = 1
 
-    print(f"hyperplane = {model.w}*x - {model.b}")
     fig, ax = plt.subplots()
-    ax = model.plot_decision_boundary(ax)
+    model.plot_decision_boundary(ax)

@@ -8,7 +8,7 @@ if __name__ == '__main__':
     C = 1
 
     X, y = load_data("smo_dataset.csv")
-    clf = SVC(C=C, kernel='linear')
+    clf = SVC(C=C, kernel='linear', tol=0.1)
     clf.fit(X, y)
 
     plt.scatter(X[:, 0], X[:, 1], c=y, s=30, cmap=plt.cm.Paired)
