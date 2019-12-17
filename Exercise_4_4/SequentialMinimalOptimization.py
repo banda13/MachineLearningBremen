@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+from sklearn.preprocessing import StandardScaler
 
 
 def linearKernel(x, y, b=1):
@@ -173,13 +175,22 @@ class SMOmodel:
 if __name__ == "__main__":
 
     X_train, y_train = load_data("smo_dataset.csv")
-    C = 0.1
+
+    """
+    X_train, y_train = make_blobs(n_samples=1000, centers=2,
+                            n_features=2, random_state=1)
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train, y_train)
+    y_train[y_train == 0] = -1
+    """
+
+    C = 2.
     m = len(X_train)
     alphas = np.zeros(m)
     errors = np.zeros(m)
     b = 0.0
-    tol = 0.1
-    eps = 0.1
+    tol = 0.01
+    eps = 0.01
 
     model = SMOmodel(X_train, y_train, C, linearKernel, alphas, b, errors, tol, eps)
     initial_error = model.evaluate(model.X) - model.y
