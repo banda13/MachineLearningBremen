@@ -5,14 +5,10 @@ from sklearn.datasets import make_blobs, make_moons, make_circles
 from sklearn.preprocessing import StandardScaler
 
 
-def linearKernel(x, y, b=1):
-    return x @ y.T + b
-
+def linearKernel(x, y):
+    return x @ y.T
 
 def gaussian_kernel(x, y, sigma=1):
-    """Returns the gaussian similarity of arrays `x` and `y` with
-    kernel width parameter `sigma` (set to 1 by default)."""
-
     if np.ndim(x) == 1 and np.ndim(y) == 1:
         result = np.exp(- (np.linalg.norm(x - y, 2)) ** 2 / (2 * sigma ** 2))
     elif (np.ndim(x) > 1 and np.ndim(y) == 1) or (np.ndim(x) == 1 and np.ndim(y) > 1):
@@ -41,7 +37,6 @@ class SMO:
         self.tol = tol  # KKT tolerance
         self.eps = eps  # alpha tolerance
         self.w = np.zeros(len(self.X[0, :]))  # w vector
-
 
     def chooseDataset(self, dataset_name):
         if dataset_name == "circle":
@@ -238,9 +233,11 @@ class SMO:
         ax.contour(XX, YY, Z, colors='k', levels=[-1, 0, 1], alpha=0.5,
                    linestyles=['--', '-', '--'])
         # plot support vectors
-        support_vectors = self.X[np.round(self.alphas, decimals=3) != 0.0]
+        support_vectors = self.X[np.round(self.alphas, decimals=2) != 0.0]
         ax.scatter(support_vectors[:, 0], support_vectors[:, 1], s=100,
-                   linewidth=0.5, facecolors='none', edgecolors='k')
+                   linewidth=0.5, facecolors='none', edgecolors='k', label='Support Vectors')
+        plt.legend(loc='best', bbox_to_anchor=(0.75, 0.2),
+                   ncol=1, fancybox=True, shadow=True)
         plt.show()
 
 
@@ -257,13 +254,13 @@ if __name__ == "__main__":
         
         - eps: alpha tolerance
         
-        - dataset: dataset on which apply the SMO (possibilities: "exercise_sheet", "moons", "circle") 
+        - dataset: dataset on which apply the SMO (possibilities: "exercise_sheet", "moon", "circle") 
                                                     N.B. Last two datasets are from scikit-learn
                                                     
         - kernel : kernel to use for SMO (possibilities: "linear", "gaussian")
     """
 
-    C = 10.
+    C = 100.
     tol = 0.01
     eps = 0.05
     dataset = "exercise_sheet"
