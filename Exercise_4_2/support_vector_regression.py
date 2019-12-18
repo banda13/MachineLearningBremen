@@ -62,11 +62,11 @@ if __name__ == '__main__':
     data = pd.read_csv("schwefel.csv")
 
     #a)
-    svrPoly = supportVectorRegression(kernel='poly', C=C, gamma=gamma, degree=3, epsilon=epsilon, coef0=1)
+    svrPoly = supportVectorRegression(kernel='poly', C=C, degree=3, epsilon=epsilon, coef0=1)
     svrRBF = supportVectorRegression(C=C, epsilon=epsilon, gamma=gamma)
-    svrLinear = supportVectorRegression(kernel='linear', C=C, epsilon=epsilon, gamma=gamma)
+    svrLinear = supportVectorRegression(kernel='linear', C=C, epsilon=epsilon)
     #c)
-    svrCustom = supportVectorRegression(kernel=my_kernel, C=C, epsilon=epsilon, gamma=gamma)
+    svrCustom = supportVectorRegression(kernel=my_kernel, C=C, epsilon=epsilon)
 
     # svr execution and plotting results
     svrs = [('m', svrPoly), ('c', svrRBF), ('g', svrLinear), ('b', svrCustom)]
