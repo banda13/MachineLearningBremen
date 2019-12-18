@@ -6,9 +6,11 @@ from sklearn.preprocessing import StandardScaler
 
 
 def linearKernel(x, y):
+
     return x @ y.T
 
 def gaussian_kernel(x, y, sigma=1):
+    
     if np.ndim(x) == 1 and np.ndim(y) == 1:
         result = np.exp(- (np.linalg.norm(x - y, 2)) ** 2 / (2 * sigma ** 2))
     elif (np.ndim(x) > 1 and np.ndim(y) == 1) or (np.ndim(x) == 1 and np.ndim(y) > 1):
@@ -39,6 +41,9 @@ class SMO:
         self.w = np.zeros(len(self.X[0, :]))  # w vector
 
     def chooseDataset(self, dataset_name):
+
+        """ Given the name of dataset chosen, it return the samples X_train and the labels Y_train"""
+
         if dataset_name == "circle":
             X_train, y_train = make_circles(n_samples=500, noise=0.1, factor=0.1, random_state=1)
             scaler = StandardScaler()
@@ -55,13 +60,18 @@ class SMO:
         return X_train, y_train
 
     def chooseKernel(self, kernel_name):
+
+        """Given the name of the kernel chosen, it returns the correspondent kernel function"""
+
         if kernel_name == "linear":
             return linearKernel
         else:
             return gaussian_kernel
 
     def objectiveFunction(self, alphas=None):
+
         """Returns the objective function of the SVM"""
+
         if alphas is None:
             alphas = self.alphas
         sum_1 = np.sum(alphas)
@@ -72,11 +82,16 @@ class SMO:
         return sum_1 - sum_2
 
     def evaluate(self, X_test):
+
         """Applies the SVM decision function to the X_test features vector"""
+
         return (self.alphas * self.y) @ self.kernel(self.X, X_test) - self.b
 
     def mainRoutine(self):
-        """Applies the Main Routine of SMO algorithm"""
+
+        """Applies the Main Routine of SMO algorithm. In particular, here is realized the choice of the firs
+           Lagrange multiplier to optimize"""
+
         numChanged = 0
         examineAll = 1
         while numChanged > 0 or examineAll:
@@ -96,7 +111,12 @@ class SMO:
         return True
 
     def examineExample(self, i_2):
-        """Applies the Examine Example procedure of SMO algorithm"""
+
+        """Applies the Examine Example procedure of SMO algorithm. It implements the choice of the second Lagrange
+           multiplier with the heuristic hierarchy and it passes the indices of the two multipliers to the takeStep
+           function.
+        """
+
         y_2 = self.y[i_2]
         alpha_2 = self.alphas[i_2]
         E_2 = self.errors[i_2]
@@ -130,6 +150,9 @@ class SMO:
         return 0
 
     def takeStep(self, i_1, i_2):
+
+        """ Given the indices of the two Lagrange multipliers to optimize, it calculates the new values for alpha_1,
+            alpha_2 and b and updates the error cache"""
 
         if i_1 == i_2:
             return 0
@@ -208,6 +231,7 @@ class SMO:
         return 1
 
     def plot_decision_boundary(self, ax, dataset, kernel, resolution=100, colors=('b', 'k', 'r'), levels=(-1, 0, 1)):
+
         """Plots the model's decision boundary on the input axes object.
         Range of decision boundary grid is determined by the training data.
         Returns decision boundary grid and axes object (`grid`, `ax`)."""
@@ -239,7 +263,6 @@ class SMO:
         plt.legend(loc='best', bbox_to_anchor=(0.75, 0.2),
                    ncol=1, fancybox=True, shadow=True)
         plt.show()
-
 
 
 if __name__ == "__main__":
