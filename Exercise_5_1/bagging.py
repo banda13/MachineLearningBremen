@@ -11,25 +11,25 @@ class Evaluation:
     """This class provides functions for evaluating classifiers """
         
     def generate_cv_pairs(self, n_samples, y, n_folds=5, n_rep=1):
-        """ Train and test pairs according to statified k-fold cross validation with ranodmization 
+        """ Train and test pairs according to stratified k-fold cross validation with randomization
 
         Parameters
         ----------
         n_samples : int
             The number of samples in the dataset
 
-        y : array-like, shape (n_sapmles), 
+        y : array-like, shape (n_samples),
             The labels of the data.
 
         n_folds : int, optional (default: 5)
             The number of folds for the cross validation
 
         n_rep : int, optional (default: 1)
-            The number of repetions for the cross validation
+            The number of repetitions for the cross validation
 
         Returns
         -------
-        cv_splits : list of tupels, each tuple contains two arrays with indices
+        cv_splits : list of tuples, each tuple contains two arrays with indices
             The first array corresponds to the training data, the second to the
             testing data for the current split. The list has the length of
             *n_folds* x *n_rep*.
@@ -52,7 +52,7 @@ class Evaluation:
         y : array-like, shape (n_samples)
             The actual labels for the samples
         
-        train_test_pairs : list of tupels, each tuple contains two arrays with indices
+        train_test_pairs : list of tuples, each tuple contains two arrays with indices
             The first array corresponds to the training data, the second to the
             testing data for the current split
         
@@ -99,9 +99,21 @@ class Evaluation:
         confusion_matrix : array-like, shape (n_classes, n_classes)
             A normalized confusion matrix, where all entries sum up to 1.
         """
-        
-        # YOUR IMPLEMENTATION GOES HERE
-        
+        confusion_matrix = [[0, 0], [0, 0]]
+        for i in range(len(predictions)):
+            if predictions[i] == labels[i]:
+                if predictions[i] == 0:
+                    confusion_matrix[0][0] += 1
+                else:
+                    confusion_matrix[1][1] += 1
+            else:
+                if predictions[i] == 0:
+                    confusion_matrix[0][1] += 1
+                else:
+                    confusion_matrix[1][0] += 1
+        confusion_matrix = np.divide(confusion_matrix, len(labels))
+        return confusion_matrix
+
 
 
 class LearningAlgorithms:
@@ -165,17 +177,60 @@ class LearningAlgorithms:
             The classification outcome
         
         """
-        ### YOUR IMPLEMENTATION GOES HERE ###
-        
+        c = base_learner(**kwargs)
+        if bag_size is None:
+            bag_size = len(X_train)
+
+        all_pred = []
+
+        # For each iteration it creates a bag with random elements of X_train and with replacement, trains the
+        # classifier with the current bag and obtains the prediction for X_test
+        for i in range(num_bags):
+            # randomly draw indices of elements of X_train with replacement
+            random_indices = np.random.choice(np.arange(len(X_train)), bag_size, replace=True)
+            # train the classifier with current bag
+            c.fit(X_train[random_indices, :], y_train[random_indices])
+            # obtaining predictions
+            result = c.predict(X_test)
+            all_pred.append(result)
+        all_pred = np.asarray(all_pred)
+
+        predictions = []
+        # For each iteration it considers the predictions of the different classifiers for the j-th sample of X_test
+        # and select the most voted as final prediction
+        for j in range(len(X_test)):
+            # considering the predictions of the different classifiers for the sample j-th of X_test
+            votes = all_pred[:, j]
+            # obtaining the different labels predicted and the number of occurrences of each
+            labels, occur = np.unique(votes, return_counts=True)
+            # selecting, as final prediction, the most "voted"
+            predictions.append(labels[np.argmax(occur)])
+        return np.asarray(predictions)
+
+
+def accuracy(conf_matrix):
+    return (conf_matrix[0][0] + conf_matrix[1][1]) / (
+            conf_matrix[0][0] + conf_matrix[0][1] + conf_matrix[1][1] + conf_matrix[1][0])
+
 
 if __name__ == '__main__':
     
     # load diabetis dataset
-    data = np.loadtxt('diabetis_data.csv', delimiter=',')
+    data = np.loadtxt('diabetes_data.csv', delimiter=',')
     X, y = data[:,1:], data[:,0]
     
     c = Evaluation()
     a = LearningAlgorithms()
     
-    ### YOUR IMPLEMENTATION GOES HERE ###
+    cv_splits = c.generate_cv_pairs(len(X), y, 10, 10)
+    conf_matrix_simple= c.apply_cv(X, y, cv_splits, a.decision_tree)
+    conf_matrix_ensemble = c.apply_cv(X, y, cv_splits, a.bagging)
+    acc_simple = accuracy(conf_matrix_simple)
+    acc_ensemble = accuracy(conf_matrix_ensemble)
+    print(conf_matrix_simple)
+    print(acc_simple)
+    print(conf_matrix_ensemble)
+    print(acc_ensemble)
+
+
 
