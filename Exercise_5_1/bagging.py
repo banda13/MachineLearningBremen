@@ -223,7 +223,7 @@ if __name__ == '__main__':
     a = LearningAlgorithms()
     
     cv_splits = c.generate_cv_pairs(len(X), y, 10, 10)
-    conf_matrix_simple= c.apply_cv(X, y, cv_splits, a.decision_tree)
+    conf_matrix_simple = c.apply_cv(X, y, cv_splits, a.decision_tree)
     conf_matrix_ensemble = c.apply_cv(X, y, cv_splits, a.bagging)
     acc_simple = accuracy(conf_matrix_simple)
     acc_ensemble = accuracy(conf_matrix_ensemble)
