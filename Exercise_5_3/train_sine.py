@@ -1,8 +1,8 @@
 """Train multilayer neural network with MBSGD on sine dataset."""
 import numpy as np
 import matplotlib.pyplot as plt
-from multilayer_neural_network import MultilayerNeuralNetwork
-from minibatch_sgd import MiniBatchSGD
+from Exercise_5_3.multilayer_neural_network import MultilayerNeuralNetwork
+from Exercise_5_3.minibatch_sgd import MiniBatchSGD
 
 
 if __name__ == "__main__":

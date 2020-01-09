@@ -2,7 +2,7 @@
 """
 from __future__ import print_function
 import numpy as np
-from multilayer_neural_network import MultilayerNeuralNetwork
+from Exercise_5_3.multilayer_neural_network import MultilayerNeuralNetwork
 
 
 def test_mlnn_regression_gradient():

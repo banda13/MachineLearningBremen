@@ -1,12 +1,12 @@
 """Train multilayer neural network with MBSGD on Sarcos data set."""
 import numpy as np
 import pickle
-from sarcos import download_sarcos
-from sarcos import load_sarcos
-from sarcos import nMSE
+from Exercise_5_3.sarcos import download_sarcos
+from Exercise_5_3.sarcos import load_sarcos
+from Exercise_5_3.sarcos import nMSE
 from sklearn.preprocessing import StandardScaler
-from multilayer_neural_network import MultilayerNeuralNetwork
-from minibatch_sgd import MiniBatchSGD
+from Exercise_5_3.multilayer_neural_network import MultilayerNeuralNetwork
+from Exercise_5_3.minibatch_sgd import MiniBatchSGD
 
 
 if __name__ == "__main__":

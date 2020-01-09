@@ -1,7 +1,9 @@
 """Multilayer Neural Network."""
 import numpy as np
-from tools import (softmax, linear, linear_derivative, relu, relu_derivative,
-                   convolve, back_convolve)
+from Exercise_5_3.tools import (softmax, linear, linear_derivative, relu, relu_derivative)  # ,
+
+
+# convolve, back_convolve)
 
 
 class FullyConnectedLayer(object):
@@ -27,6 +29,7 @@ class FullyConnectedLayer(object):
     verbose : int, optional
         verbosity level
     """
+
     def __init__(self, I, J, g, gd, std_dev, verbose=0):
         self.I = np.prod(I) + 1  # Add bias component
         self.J = J
@@ -49,8 +52,11 @@ class FullyConnectedLayer(object):
             random number generator or seed
         """
         ######################################################################
-        raise NotImplementedError(
+
+        """raise NotImplementedError(
             "TODO Implement FullyConnectedLayer.initialize_weights()")
+        """
+        self.W = self.std_dev * np.random.randn(self.J, self.I)
         ######################################################################
 
     def get_output_shape(self):
@@ -82,8 +88,14 @@ class FullyConnectedLayer(object):
             raise ValueError("shape = " + str(X.shape))
 
         ######################################################################
-        raise NotImplementedError(
-            "TODO Implement FullyConnectedLayer.forward()")
+        # raise NotImplementedError(
+        # "TODO Implement FullyConnectedLayer.forward()"
+        weights = self.W
+        self.X = X
+        bias = np.ones((len(X), 1))
+        inp = np.append(self.X, bias, 1)
+        A = np.dot(inp, weights.transpose())
+        self.Y = self.g(A)
         ######################################################################
         return self.Y
 
@@ -107,8 +119,19 @@ class FullyConnectedLayer(object):
             raise ValueError("%r != %r" % (dEdY.shape[1], self.J))
 
         ######################################################################
-        raise NotImplementedError(
-            "TODO Implement FullyConnectedLayer.backpropagation()")
+        # raise NotImplementedError(
+        #    "TODO Implement FullyConnectedLayer.backpropagation()")
+
+        gd = self.gd(self.Y)
+
+        delta = gd * dEdY
+        bias = np.ones((len(self.X), 1))
+        inp = np.append(self.X, bias, 1)
+        # is that correct?
+        Wd = np.dot(delta.transpose(), inp)
+        dEdX = np.dot(delta, self.W[:, :-1])
+
+
         ######################################################################
         return dEdX, Wd
 
@@ -195,8 +218,8 @@ class MultilayerNeuralNetwork(object):
                     verbose)
                 I = l.get_output_shape()
             else:
-                raise NotImplementedException("Layer type '%s' is not "
-                                              "implemented." % layer["type"])
+                raise NotImplementedError("Layer type '%s' is not "
+                                          "implemented." % layer["type"])
             self.layers.append(l)
         if training == "classification":
             self.layers.append(FullyConnectedLayer(
@@ -248,15 +271,17 @@ class MultilayerNeuralNetwork(object):
 
         # Compute error of the dataset
         if self.error_function == "ce":
-        ########################################################################
-        # implementation is not required to solve the exercise
+            ########################################################################
+            # implementation is not required to solve the exercise
             raise NotImplementedError(
                 "TODO implement MultilayerNeuralNetwork.error()")
         ########################################################################
         elif self.error_function == "sse":
-        ######################################################################
-            raise NotImplementedError(
-                "TODO Implement MultilayerNeuralNetwork.error()")
+            ######################################################################
+            # raise NotImplementedError(
+            #    "TODO Implement MultilayerNeuralNetwork.error()")
+            Y = self.predict(X)
+            return np.sum(np.power(T - Y, 2)) / 2
         ######################################################################
 
     def numerical_gradient(self, X, T, eps=1e-5):
@@ -341,10 +366,11 @@ class MultilayerNeuralNetwork(object):
                 ##############################################################
             elif self.error_function == "sse":
                 ##############################################################
-                raise NotImplementedError(
-                    "TODO Implement MultilayerNeuralNetwork.gradient()")
+                # raise NotImplementedError(
+                #    "TODO Implement MultilayerNeuralNetwork.gradient()")
+                e = np.sum(np.power(T - Y, 2)) / 2
                 ##############################################################
-            return g,
+            return g, e
         else:
             return g
 
@@ -388,7 +414,11 @@ class MultilayerNeuralNetwork(object):
         """
         # Forward propagation
         ######################################################################
-        raise NotImplementedError(
-            "TODO Implement MultilayerNeuralNetwork.predict()")
+        # raise NotImplementedError(
+        # "TODO Implement MultilayerNeuralNetwork.predict()")
+        prev = X
+        for layer in self.layers:
+            prev = layer.forward(prev)
+        Y = prev
         ######################################################################
-        return X
+        return Y
