@@ -76,7 +76,7 @@ def c_optimal_parameters_supposed():
     alpha = 0.01
     alpha_decay = 0.95
     min_alpha = 0.00005
-    eta = 0.0001  # A che cazzo serve?
+    eta = 0.0001
     eta_inc = 0.01
     max_eta = 0.95
     layers = \
