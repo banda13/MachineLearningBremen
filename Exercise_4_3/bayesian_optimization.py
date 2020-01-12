@@ -164,8 +164,7 @@ def f(x):
     x:
         The point(s) to evaluate the objective function at.
     """
-    return (1.0 - np.tanh(x ** 2)) * np.sin(x * 6) + np.random.normal(loc=0.0,
-                                                                      scale=0.02)
+    return #(1.0 - np.tanh(x ** 2)) * np.sin(x * 6) + np.random.normal(loc=0.0,scale=0.02)
 
 
 def plot(x, y, y_pred, optimizer, title):

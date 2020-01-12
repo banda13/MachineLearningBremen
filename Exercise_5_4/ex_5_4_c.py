@@ -10,60 +10,53 @@ from Exercise_5_3.minibatch_sgd import MiniBatchSGD
 
 from sklearn.model_selection import cross_val_score
 from sklearn.decomposition import PCA
+from hyperopt import hp, fmin, tpe, STATUS_OK, Trials
 
+download_sarcos()
+X, Y = load_sarcos("train")
+X_test, Y_test = load_sarcos("test")
+# Scale targets
+target_scaler = StandardScaler()
+Y = target_scaler.fit_transform(Y)
+Y_test = target_scaler.transform(Y_test)
 
-if __name__ == "__main__":
+def MBSGD(hyperparameters):
     np.random.seed(0)
 
     # Download Sarcos dataset if this is required
-    download_sarcos()
 
-    batch_size = 50
-    alpha = 0.01
-    alpha_decay = 0.95
-    min_alpha = 0.00005
-    eta = 0.0001  # A che cazzo serve?
-    eta_inc = 0.01
-    max_eta = 0.95
-    layers = \
-        [
-            {
-                "type": "fully_connected",
-                "num_nodes": 50
-            },
-            {
-                "type": "fully_connected",
-                "num_nodes": 50
-            }
-        ]
+    layers = []
+    for i in range(int(hyperparameters['num_layers'])):
+        layers.append({"type": "fully_connected", "num_nodes": hyperparameters['num_nodes']})
 
-    X, Y = load_sarcos("train")
-    X_test, Y_test = load_sarcos("test")
-    # Scale targets
-    pca = PCA(n_components=16)
-    target_scaler = StandardScaler()
-    pca.fit(X)
-    X = pca.fit_transform(X)
-    Y = target_scaler.fit_transform(Y)
-    Y_test = target_scaler.transform(Y_test)
+
 
     D = (X.shape[1],)
     F = Y.shape[1]
 
     model = MultilayerNeuralNetwork(D, F, layers, training="regression",
                                     std_dev=0.001, verbose=True)
-    mbsgd = MiniBatchSGD(net=model, epochs=10, batch_size=batch_size, alpha=alpha, alpha_decay=alpha_decay,
-                         min_alpha=min_alpha, eta=eta, eta_inc=eta_inc, max_eta=max_eta, random_state=0)
+    mbsgd = MiniBatchSGD(net=model, epochs=10, batch_size=hyperparameters['batch_size'], alpha=hyperparameters['alpha'],
+                         alpha_decay=hyperparameters['alpha_decay'], min_alpha=hyperparameters['min_alpha'],
+                         eta=hyperparameters['eta'], eta_inc=hyperparameters['eta_inc'],
+                         max_eta=hyperparameters['max_eta'], random_state=0)
     #mbsgd.fit(X, Y)
 
     ############################################################################
 
-    all_accuracies = cross_val_score(estimator=mbsgd, X=X, y=Y, cv=5)
+    all_accuracies = cross_val_score(estimator=mbsgd, X=X, y=Y, cv=10)
+    return all_accuracies.mean()
 
-    print("Mean:")
-    print(all_accuracies.mean())
+if __name__ == '__main__':
 
-    print("Std deviation:")
-    print(all_accuracies.std())
-    print()
+    space = {'batch_size': hp.uniformint('batch_size', 32, 256), 'alpha': hp.uniform('alpha', 0.05, 0.1),
+             'alpha_decay': hp.uniform('alpha_decay', 0,1), 'min_alpha': hp.uniform('min_alpha', 0.00001, 0.0009),
+             'eta': hp.uniform('eta', 0.5, 0.95), 'eta_inc': hp.uniform('eta_inc', 0.001, 0.1),
+             'max_eta': hp.uniform('max_eta', 0.5, 0.95), 'num_layers': hp.uniformint('num_layers', 1, 5),
+             'num_nodes': hp.uniformint('num_nodes', 20, 100)}
+
+    trials = Trials()
+    best = fmin(fn=MBSGD, space=space, algo=tpe.suggest, max_evals=500, trials=trials)
+
+    print(best)
 
