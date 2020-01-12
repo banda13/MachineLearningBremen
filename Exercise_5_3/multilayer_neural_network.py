@@ -368,7 +368,7 @@ class MultilayerNeuralNetwork(object):
                 ##############################################################
                 # raise NotImplementedError(
                 #    "TODO Implement MultilayerNeuralNetwork.gradient()")
-                e = np.sum(np.power(T - Y, 2)) / 2
+                e = np.sum(T - Y ** 2) / 2
                 ##############################################################
             return g, e
         else:
