@@ -143,7 +143,7 @@ class LearningAlgorithms:
         c.fit(X_train, y_train)
         return c.predict(X_test)
     
-    def bagging(self, X_train, y_train, X_test, bag_size=None, 
+    def bagging(self, X_train, y_train, X_test, bag_size=None,
             num_bags=10, base_learner=DecisionTreeClassifier, **kwargs):
         """ Build Bagging model on training data and return test predictions 
             
@@ -217,7 +217,7 @@ if __name__ == '__main__':
     
     # load diabetis dataset
     data = np.loadtxt('diabetes_data.csv', delimiter=',')
-    X, y = data[:,1:], data[:,0]
+    X, y = data[:, 1:], data[:, 0]
     
     c = Evaluation()
     a = LearningAlgorithms()
@@ -227,10 +227,17 @@ if __name__ == '__main__':
     conf_matrix_ensemble = c.apply_cv(X, y, cv_splits, a.bagging)
     acc_simple = accuracy(conf_matrix_simple)
     acc_ensemble = accuracy(conf_matrix_ensemble)
+    print("Evaluation of base learner")
+    print("--------------------------")
+    print("Confusion Matrix:")
     print(conf_matrix_simple)
-    print(acc_simple)
+    print(f"Accuracy: {acc_simple}")
+    print("Evaluation of ensemble learner")
+    print("--------------------------")
+    print("Confusion Matrix:")
     print(conf_matrix_ensemble)
-    print(acc_ensemble)
+    print(f"Accuracy: {acc_ensemble}")
+
 
 
 
