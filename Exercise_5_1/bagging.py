@@ -232,6 +232,7 @@ if __name__ == '__main__':
     print("Confusion Matrix:")
     print(conf_matrix_simple)
     print(f"Accuracy: {acc_simple}")
+    print("--------------------------")
     print("Evaluation of ensemble learner")
     print("--------------------------")
     print("Confusion Matrix:")
