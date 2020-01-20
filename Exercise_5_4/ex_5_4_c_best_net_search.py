@@ -13,16 +13,16 @@ from sklearn.model_selection import GridSearchCV, cross_val_score
 
 def test_params(D, F, X, Y, best_mean, best_model, layers):
     batch_size = 32
-    alpha = 0.097870972472081
+    alpha = 0.06
     alpha_decay = 0.9852968567173417
     min_alpha = 1.944958755272318e-05
     eta = 0.00010531183971652664
     eta_inc = 0.0001955608234671532
     max_eta = 0.982612873047571
     model = MultilayerNeuralNetwork(D, F, layers, training="regression", std_dev=0.001, verbose=False)
-    mbsgd = MiniBatchSGD(net=model, epochs=5, batch_size=batch_size, alpha=alpha, alpha_decay=alpha_decay,
+    mbsgd = MiniBatchSGD(net=model, epochs=10, batch_size=batch_size, alpha=alpha, alpha_decay=alpha_decay,
                          min_alpha=min_alpha, eta=eta, eta_inc=eta_inc, max_eta=max_eta, random_state=0, verbose=0)
-    all_accuracies = cross_val_score(estimator=mbsgd, X=X, y=Y, cv=5,n_jobs=7, verbose=1)
+    all_accuracies = cross_val_score(estimator=mbsgd, X=X, y=Y, cv=10, n_jobs=8, verbose=0)
     mean = -all_accuracies.mean()
     if mean < best_mean:
         best_mean = mean
@@ -45,8 +45,9 @@ def find_opt_num_layers(X, Y, max_num_layers):
     return len(best_model.layers)
 
 
-def find_opt_node_distro(X, Y, num_layers, network_nodes = 100, random_seed=0):
+def find_opt_node_distro(X, Y, num_layers, random_seed=0):
     np.random.seed(random_seed)
+    network_nodes = 100
     D = (X.shape[1],)
     F = Y.shape[1]
     best_mean = sys.maxsize
@@ -55,7 +56,7 @@ def find_opt_node_distro(X, Y, num_layers, network_nodes = 100, random_seed=0):
         layers = []
         remaining_nodes = network_nodes
         for j in range(num_layers-1):
-            nodes_this_layer = np.random.randint(low=int(0.2*remaining_nodes), high=int(0.8*remaining_nodes))
+            nodes_this_layer = np.random.randint(low=int(0.1*remaining_nodes), high=int(0.9*remaining_nodes))
             layers.append({"type": "fully_connected", "num_nodes": nodes_this_layer})
             remaining_nodes -= nodes_this_layer
         layers.append({"type": "fully_connected", "num_nodes": remaining_nodes})
@@ -139,18 +140,3 @@ if __name__ == "__main__":
     for layer in best_model.layers:
         print("input nodes: " + str(layer.I) + ", output nodes: " + str(layer.J))
     print()
-
-    ############################################################################
-    '''tuned_params = {'batch_size': np.arange(32, 128, 32),
-                    'alpha': np.arange(0.001, 0.01, 0.002),
-                    'alpha_decay': np.arange(0.01, 0.9, 0.05),
-                    'min_alpha': np.arange(0.00001, 0.0001, 0.00005),
-                    'eta': np.arange(0.0001, 0.001, 0.0002),
-                    'eta_inc': np.arange(0.00001, 0.0001, 0.00005),
-                    'max_eta': np.arange(0.1, 0.9, 0.1)
-                    }
-
-    gs = GridSearchCV(MiniBatchSGD(net=best_model, random_state=0), tuned_params, cv=5, n_jobs=7, verbose=2)
-
-    gs.fit(X_test, Y_test)
-    print(gs.best_params_)'''
