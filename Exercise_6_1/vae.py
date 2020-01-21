@@ -3,6 +3,8 @@ import tensorflow as tf
 import keras.backend as K
 import matplotlib.pyplot as plt
 
+labels = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
 class VAE(object):
 
     def __init__(self, latent_dimension, img_shape):
@@ -16,6 +18,7 @@ class VAE(object):
         self.vae = None
         self.inputs = None
         self.outputs = None
+        self.history = None
 
         # other fixed params, but feel free to change it
         self.intermediate_dim = 512
@@ -69,7 +72,7 @@ class VAE(object):
 
         vae_loss = K.mean(reconstruction_loss + kl_loss)
         self.vae.add_loss(vae_loss)
-        self.vae.compile(optimizer='adam')
+        self.vae.compile(optimizer='adam', metrics=['accuracy'])
 
     def reparametrization(self, args):
         z_mean, z_log_var = args
@@ -80,15 +83,73 @@ class VAE(object):
         return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
     def train(self, x_train, epochs, batch_size, x_test):
-        return self.vae.fit(x_train,
+        self.history = self.vae.fit(x_train,
                 epochs=epochs,
                 batch_size=batch_size,
                 validation_data=(x_test, None))
+        return self.history
 
+    def plot_training(self):
+        plt.plot(self.history.history['loss'])
+        plt.plot(self.history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig('traning_loss.png')
+        plt.show()
 
+    def plot_latent_space(self, test_images):
+        z_mean, _, _ = self.encoder.predict(test_images,
+                                           batch_size=128)
+
+        x = z_mean[:, 0]
+        y = z_mean[:, 1]
+        unique = np.unique(test_labels)
+        colors = [plt.cm.jet(i / float(len(unique) - 1)) for i in range(len(unique))]
+        for i, u in enumerate(unique):
+            xi = [x[j] for j in range(len(x)) if test_labels[j] == u]
+            yi = [y[j] for j in range(len(y)) if test_labels[j] == u]
+            plt.scatter(xi, yi, c=colors[i], label=str(labels[u]))
+        plt.legend()
+        plt.xlabel("z[0]")
+        plt.ylabel("z[1]")
+        plt.savefig("latent_space.png")
+        plt.show()
+
+    def plot_data_space(self):
+        n = 30
+        figure = np.zeros((self.img_shape * n, self.img_shape * n))
+        # linearly spaced coordinates corresponding to the 2D plot
+        # of digit classes in the latent space
+        grid_x = np.linspace(-4, 4, n)
+        grid_y = np.linspace(-4, 4, n)[::-1]
+
+        for i, yi in enumerate(grid_y):
+            for j, xi in enumerate(grid_x):
+                z_sample = np.array([[xi, yi]])
+                x_decoded = self.decoder.predict(z_sample)
+                digit = x_decoded[0].reshape(self.img_shape, self.img_shape)
+                figure[i * self.img_shape: (i + 1) * self.img_shape,
+                j * self.img_shape: (j + 1) * self.img_shape] = digit
+
+        plt.figure(figsize=(10, 10))
+        start_range = self.img_shape // 2
+        end_range = (n - 1) * self.img_shape + start_range + 1
+        pixel_range = np.arange(start_range, end_range, self.img_shape)
+        sample_range_x = np.round(grid_x, 1)
+        sample_range_y = np.round(grid_y, 1)
+        plt.xticks(pixel_range, sample_range_x)
+        plt.yticks(pixel_range, sample_range_y)
+        plt.xlabel("z[0]")
+        plt.ylabel("z[1]")
+        plt.imshow(figure, cmap='Greys_r')
+        plt.savefig('data_space.png')
+        plt.show()
 
 if __name__ == '__main__':
-    (train_images, _), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+    # loading images
+    (train_images, _), (test_images, test_labels) = tf.keras.datasets.fashion_mnist.load_data()
     print('Train size %d, test size %d' % (len(train_images), len(test_images)))
 
     """
@@ -114,6 +175,7 @@ if __name__ == '__main__':
     test_dataset = tf.data.Dataset.from_tensor_slices(test_images).shuffle(TEST_BUF).batch(BATCH_SIZE)
     """
 
+    # preprocessing
     image_size = train_images.shape[1]
     original_dim = image_size * image_size
     train_images = np.reshape(train_images, [-1, original_dim])
@@ -121,19 +183,12 @@ if __name__ == '__main__':
     train_images = train_images.astype('float32') / 255
     test_images = test_images.astype('float32') / 255
 
+    # training
     vae = VAE(2, image_size)
     vae.compile_model()
-    hist = vae.train(train_images, 2, 128, test_images)
-    print(hist)
+    vae.train(train_images, 50, 128, test_images)
+    vae.plot_training()
 
-
-    z_mean, _, _ = vae.encoder.predict(test_images,
-                                   batch_size=128)
-    plt.figure(figsize=(12, 10))
-    plt.scatter(z_mean[:, 0], z_mean[:, 1], c=test_labels)
-    plt.colorbar()
-    plt.xlabel("z[0]")
-    plt.ylabel("z[1]")
-    plt.savefig("latent_space.png")
-    plt.show()
-
+    # testing and visualizing the results
+    vae.plot_latent_space(test_images)
+    vae.plot_data_space()
