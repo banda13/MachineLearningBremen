@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
@@ -6,6 +7,8 @@ import matplotlib.pyplot as plt
 labels = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 img_dir = 'images/'
 
+if not os.path.isdir(img_dir):
+    os.mkdir(img_dir)
 
 class VAE(object):
 
@@ -24,7 +27,7 @@ class VAE(object):
 
         # network parameters
         self.intermediate_dim = 512
-        self.filters = 16
+        self.filters = 64
         self.kernel_size = 3
 
     def compile_mlp_model(self):
@@ -33,6 +36,11 @@ class VAE(object):
         # creating encoder
         self.inputs = tf.keras.layers.Input(shape=(self.origin_dim,), name='encoder_input')
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(self.inputs)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+
         z_mean = tf.keras.layers.Dense(self.latent_dim, name='z_mean')(x)
         z_log_var = tf.keras.layers.Dense(self.latent_dim, name='z_log_var')(x)
         z = tf.keras.layers.Lambda(self.reparametrization, output_shape=(self.latent_dim,), name='z')(
@@ -43,6 +51,11 @@ class VAE(object):
         # creating decoder
         latent_inputs = tf.keras.layers.Input(shape=(self.latent_dim,), name='z_sampling')
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(latent_inputs)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+
         self.outputs = tf.keras.layers.Dense(self.origin_dim, activation='sigmoid')(x)
         self.decoder = tf.keras.models.Model(latent_inputs, self.outputs, name='decoder')
         tf.keras.utils.plot_model(self.decoder, to_file=img_dir + 'vae_mlp_decoder.png', show_shapes=True)
@@ -60,7 +73,7 @@ class VAE(object):
 
         vae_loss = K.mean(reconstruction_loss + kl_loss)
         self.vae.add_loss(vae_loss)
-        self.vae.compile(optimizer='adam', metrics=['accuracy'])
+        self.vae.compile(optimizer=tf.keras.optimizers.Adam(lr=0.0001), metrics=['accuracy'])
         tf.keras.utils.plot_model(self.vae, to_file=img_dir + 'vae.png', show_shapes=True)
 
     def compile_cnn_model(self):
@@ -80,7 +93,10 @@ class VAE(object):
         shape = K.int_shape(x)
 
         x = tf.keras.layers.Flatten()(x)
-        x = tf.keras.layers.Dense(16, activation='relu')(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.5)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
+
         z_mean = tf.keras.layers.Dense(self.latent_dim, name='z_mean')(x)
         z_log_var = tf.keras.layers.Dense(self.latent_dim, name='z_log_var')(x)
 
@@ -91,7 +107,10 @@ class VAE(object):
 
         # instantiate decoder
         latent_inputs = tf.keras.layers.Input(shape=(self.latent_dim,), name='z_sampling')
-        x = tf.keras.layers.Dense(shape[1] * shape[2] * shape[3], activation='relu')(latent_inputs)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(latent_inputs)
+        x = tf.keras.layers.Dropout(0.5)(x)
+        x = tf.keras.layers.Dense(shape[1] * shape[2] * shape[3], activation='relu')(x)
+
         x = tf.keras.layers.Reshape((shape[1], shape[2], shape[3]))(x)
 
         for i in range(2):
@@ -137,10 +156,12 @@ class VAE(object):
         return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
     def train(self, x_train, epochs, batch_size, x_test):
+        es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
         self.history = self.vae.fit(x_train,
                                     epochs=epochs,
                                     batch_size=batch_size,
-                                    validation_data=(x_test, None))
+                                    validation_data=(x_test, None),
+                                    callbacks=[es])
         return self.history
 
     def plot_training(self):
@@ -152,6 +173,7 @@ class VAE(object):
         plt.legend(['Train', 'Test'], loc='upper left')
         plt.savefig(img_dir + 'traning_loss.png')
         plt.show()
+        plt.close()
 
     def plot_latent_space(self, test_images):
         z_mean, _, _ = self.encoder.predict(test_images,
@@ -169,6 +191,7 @@ class VAE(object):
         plt.ylabel("z[1]")
         plt.savefig(img_dir + "latent_space.png")
         plt.show()
+        plt.close()
 
     def plot_data_space(self):
         n = 30
@@ -197,11 +220,12 @@ class VAE(object):
         plt.imshow(figure, cmap='Greys_r')
         plt.savefig(img_dir + 'data_space.png')
         plt.show()
+        plt.close()
 
 
 if __name__ == '__main__':
 
-    MODE = 'cnn'  # cnn or mlp for now
+    MODE = 'mlp'  # cnn or mlp for now
     if MODE not in ['cnn', 'mlp']:
         raise Exception('Unrecognized mode. valid values: mlp or cnn')
 
@@ -224,8 +248,8 @@ if __name__ == '__main__':
         train_images = train_images.astype('float32') / 255
         test_images = test_images.astype('float32') / 255
 
-    EPOCHS = 10
-    BATCH_SIZE = 128
+    EPOCHS = 50
+    BATCH_SIZE = 64
     LATENT_SPACE = 2
 
     # training
