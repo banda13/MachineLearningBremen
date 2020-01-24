@@ -7,86 +7,145 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 
 DATA_FODLER = 'FiveCitiePMData/'
+IMAGE_FOLDER = "images/"
 
-# parse csv-s into pd dataframe
-data_source_names = os.listdir(DATA_FODLER)
-data_sources = [pd.read_csv(DATA_FODLER + f, delimiter=',') for f in data_source_names]
-
-# filter out the columns
-pm_dfs = [d.filter(like='PM_') for d in data_sources]
-
-# drop nan rows
-dfs = [d.dropna() for d in pm_dfs]
-
-# calculate the mean between rows
-dfs = [d.mean(axis=1) for d in dfs]
-
-# concat all the data frames
-data_frame = pd.concat(dfs)
-
-# convert it numpy array
-dataset = data_frame.values.reshape(-1, 1)
-
-# normalize the data
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
-
-# split into train and test
-train_factor = 0.5
-train_size = int(len(dataset) * train_factor)
-test_size = len(dataset) - train_size
-train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
-
-# format into time series
-def create_dataset(dataset, look_back=1):
-    dataX, dataY = [], []
-    for i in range(len(dataset) - look_back - 1):
-        a = dataset[i:(i + look_back), 0]
-        dataX.append(a)
-        dataY.append(dataset[i + look_back, 0])
-    return np.array(dataX), np.array(dataY)
-
-look_back = 5
-trainX, trainY = create_dataset(train, look_back)
-testX, testY = create_dataset(test, look_back)
-
-# reshape input to be [samples, time steps, features]
-trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
-
-model = tf.keras.models.Sequential()
-model.add(tf.keras.layers.LSTM(4, input_shape=(1, look_back)))
-model.add(tf.keras.layers.Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=10, batch_size=1, verbose=1)
+if not os.path.isdir(IMAGE_FOLDER):
+    os.mkdir(IMAGE_FOLDER)
 
 
-# make predictions
-trainPredict = model.predict(trainX)
-testPredict = model.predict(testX)
+class RNN(object):
 
-# invert predictions
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])
+    def __init__(self, sliding_window_size):
+        self.trainX = None
+        self.testX = None
+        self.trainY = None
+        self.testY = None
 
-# calculate root mean squared error
-trainScore = math.sqrt(tf.keras.losses.mean_squared_error(trainY[0], trainPredict[:,0]))
-print('Train Score: %.2f RMSE' % trainScore)
-testScore = math.sqrt(tf.keras.losses.mean_squared_error(testY[0], testPredict[:,0]))
-print('Test Score: %.2f RMSE' % testScore)
+        self.sliding_window_size = sliding_window_size
 
-# shift train predictions for plotting
-trainPredictPlot = np.empty_like(dataset)
-trainPredictPlot[:, :] = np.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
-# shift test predictions for plotting
-testPredictPlot = np.empty_like(dataset)
-testPredictPlot[:, :] = np.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
-plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot)
-plt.show()
+        self.history = None
+        self.model = None
+
+        self.scaler = MinMaxScaler(feature_range=(0, 1))
+        self.dataset = None
+
+    def load_and_preprocess(self):
+
+        # parse csv-s into pd dataframe
+        data_source_names = os.listdir(DATA_FODLER)
+        data_sources = [pd.read_csv(DATA_FODLER + f, delimiter=',') for f in data_source_names]
+
+        # filter out the columns
+        pm_dfs = [d.filter(like='PM_') for d in data_sources]
+
+        # drop nan rows
+        dfs = [d.dropna() for d in pm_dfs]
+
+        # calculate the mean between rows
+        dfs = [d.mean(axis=1) for d in dfs]
+
+        # concat all the data frames
+        data_frame = pd.concat(dfs)
+
+        # convert it numpy array
+        self.dataset = data_frame.values.reshape(-1, 1)
+
+        # shorter the data for testing (test only 5% of the data to make it faster)
+        # TODO remove this, this is only for testing!!!!!!!
+        self.dataset = self.dataset[:int(len(self.dataset) * 0.05)]
+
+        # normalize the data
+        self.dataset = self.scaler.fit_transform(self.dataset)
+
+        # split into train and test
+        train_factor = 0.8
+        train_size = int(len(self.dataset) * train_factor)
+        train, test = self.dataset[0:train_size, :], self.dataset[train_size:len(self.dataset), :]
+
+        # format into time series
+        self.trainX, self.trainY = self.create_dataset(train, self.sliding_window_size)
+        self.testX, self.testY = self.create_dataset(test, self.sliding_window_size)
+
+        # reshape input to be [samples, time steps, features]
+        self.trainX = np.reshape(self.trainX, (self.trainX.shape[0], 1, self.trainX.shape[1]))
+        self.testX = np.reshape(self.testX, (self.testX.shape[0], 1, self.testX.shape[1]))
+
+    def create_dataset(self, dataset, sliding_window_size):
+        dataX, dataY = [], []
+        for i in range(len(dataset) - sliding_window_size - 1):
+            a = dataset[i:(i + sliding_window_size), 0]
+            dataX.append(a)
+            dataY.append(dataset[i + sliding_window_size, 0])
+        return np.array(dataX), np.array(dataY)
+
+    def compile_model(self):
+        self.model = tf.keras.models.Sequential()
+        self.model.add(tf.keras.layers.LSTM(4, input_shape=(1, self.sliding_window_size)))
+        self.model.add(tf.keras.layers.Dense(1))
+        self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+
+    def train(self, epochs=10, batch_size=1):
+        self.history = self.model.fit(self.trainX, self.trainY,
+                                      epochs=epochs,
+                                      batch_size=batch_size,
+                                      validation_data=(self.testX, self.testY),
+                                      verbose=1)
+
+    def evaluate(self):
+        # make predictions
+        self.train_predict = self.model.predict(self.trainX)
+        self.test_predict = self.model.predict(self.testX)
+
+        # invert predictions
+        self.train_predict = self.scaler.inverse_transform(self.train_predict)
+        self.trainY = self.scaler.inverse_transform([self.trainY])
+        self.test_predict = self.scaler.inverse_transform(self.test_predict)
+        self.testY = self.scaler.inverse_transform([self.testY])
+
+        # calculate root mean squared error
+        train_score = math.sqrt(tf.keras.losses.mean_squared_error(self.trainY[0], self.train_predict[:, 0]))
+        print('Train Score: %.4f RMSE' % train_score)
+        test_score = math.sqrt(tf.keras.losses.mean_squared_error(self.testY[0], self.test_predict[:, 0]))
+        print('Test Score: %.4f RMSE' % test_score)
+        return train_score, test_score
+
+    def plot(self):
+        # plot training loss
+        plt.plot(self.history.history['loss'])
+        plt.plot(self.history.history['val_loss'])
+        plt.title('Model loss')
+        plt.ylabel('Loss')
+        plt.xlabel('Epoch')
+        plt.legend(['Train', 'Test'], loc='upper left')
+        plt.savefig(IMAGE_FOLDER + 'training_loss.png')
+        plt.show()
+        plt.close()
+
+        # shift train predictions for plotting
+        train_predict_plot = np.empty_like(self.dataset)
+        train_predict_plot[:, :] = np.nan
+        train_predict_plot[self.sliding_window_size:len(self.train_predict) + self.sliding_window_size, :] = self.train_predict
+
+        # shift test predictions for plotting
+        test_predict_plot = np.empty_like(self.dataset)
+        test_predict_plot[:, :] = np.nan
+        test_predict_plot[len(self.train_predict) + (self.sliding_window_size * 2) + 1:len(self.dataset) - 1, :] = self.test_predict
+
+        # plot baseline and predictions
+        plt.plot(self.scaler.inverse_transform(self.dataset), label='origin')
+        plt.plot(train_predict_plot, label='train')
+        plt.plot(test_predict_plot, label='test')
+        plt.title('Origin data vs predictions')
+        plt.legend()
+        plt.show()
+        plt.savefig(IMAGE_FOLDER + 'baseline_and_prediction.png')
+        plt.close()
+
+
+if __name__ == '__main__':
+    rnn = RNN(sliding_window_size=5)
+    rnn.load_and_preprocess()
+    rnn.compile_model()
+    rnn.train(epochs=10, batch_size=32)
+    train_loss, test_loss = rnn.evaluate()
+    rnn.plot()
