@@ -39,22 +39,28 @@ class RNN(object):
 
         # filter out the columns
         pm_dfs = [d.filter(like='PM_') for d in data_sources]
+        pm_dfs = [d.mean(axis=1) for d in pm_dfs]
+        date_dfs = [d.filter(items=['year', 'month', 'day', 'hour']) for d in data_sources]
+        dfs = [pd.concat([d1, d2], axis=1) for d1, d2 in zip(pm_dfs, date_dfs)]
+
+        df = dfs[0]
+        for d in dfs[1:]:
+            df = pd.merge(df, d, on=['year', 'month', 'day', 'hour'])
+
+        # print(df.head(5))
+
+        df = df.drop(['year', 'month', 'day', 'hour'], axis=1)
+        df = df.mean(axis=1)
 
         # drop nan rows
-        dfs = [d.dropna() for d in pm_dfs]
-
-        # calculate the mean between rows
-        dfs = [d.mean(axis=1) for d in dfs]
-
-        # concat all the data frames
-        data_frame = pd.concat(dfs)
+        df = df.dropna()
 
         # convert it numpy array
-        self.dataset = data_frame.values.reshape(-1, 1)
+        self.dataset = df.values.reshape(-1, 1)
 
         # shorter the data for testing (test only 5% of the data to make it faster)
         # TODO remove this, this is only for testing!!!!!!!
-        self.dataset = self.dataset[:int(len(self.dataset) * 0.05)]
+        # self.dataset = self.dataset[:int(len(self.dataset) * 0.8)]
 
         # normalize the data
         self.dataset = self.scaler.fit_transform(self.dataset)
@@ -82,16 +88,22 @@ class RNN(object):
 
     def compile_model(self):
         self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.LSTM(4, input_shape=(1, self.sliding_window_size)))
+        self.model.add(tf.keras.layers.LSTM(64, input_shape=(1, self.sliding_window_size))) # return_sequences=True
+        self.model.add(tf.keras.layers.Dense(64))
+        self.model.add(tf.keras.layers.Dense(32))
         self.model.add(tf.keras.layers.Dense(1))
-        self.model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
+        #
+        # tf.keras.optimizers.RMSprop(learning_rate=0.00005, rho=0.9)
+        self.model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.SGD(lr=0.1, decay=1e-9, momentum=0.98, nesterov=True), metrics=['accuracy'])
 
-    def train(self, epochs=10, batch_size=1):
+    def train(self, epochs=10, batch_size=1, verbose=1):
+        es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=1)
         self.history = self.model.fit(self.trainX, self.trainY,
                                       epochs=epochs,
                                       batch_size=batch_size,
                                       validation_data=(self.testX, self.testY),
-                                      verbose=1)
+                                      # callbacks=[es],
+                                      verbose=verbose)
 
     def evaluate(self):
         # make predictions
