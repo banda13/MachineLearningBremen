@@ -70,29 +70,29 @@ if __name__ == "__main__":
         'h2': tf.Variable(tf.random_normal([20, 10])),  # 10 nodes in h2 layer
         #'out': tf.Variable(tf.random_normal([10, 1])),  # 1 ouput label
         #'mu_sigma': tf.Variable(tf.random_normal([1, 2])),
-        'mu1': tf.Variable(tf.random_normal([10, 20])),
-        'mu2': tf.Variable(tf.random_normal([20, 1])),
-        'sigma1': tf.Variable(tf.random_normal([10, 20])),
-        'sigma2': tf.Variable(tf.random_normal([20, 1])),
+        'mu1': tf.Variable(tf.random_normal([10, 20],stddev=0.01)),
+        'mu2': tf.Variable(tf.random_normal([20, 1],stddev=0.01)),
+        'sigma1': tf.Variable(tf.random_normal([10, 20],stddev=0.01)),
+        'sigma2': tf.Variable(tf.random_normal([20, 1],stddev=0.01)),
     }
     biases = {
-        'b1': tf.Variable(tf.random_normal([20])),
-        'b2': tf.Variable(tf.random_normal([10])),
+        'b1': tf.Variable(tf.random_normal([20],stddev=0.01)),
+        'b2': tf.Variable(tf.random_normal([10],stddev=0.01)),
         #'out': tf.Variable(tf.random_normal([1])),
         #'mu_sigma': tf.Variable(tf.random_normal([2])),
-        'mu1' : tf.Variable(tf.random_normal([20])),
-        'mu2': tf.Variable(tf.random_normal([1])),
-        'sigma1': tf.Variable(tf.random_normal([20])),
-        'sigma2': tf.Variable(tf.random_normal([1])),
+        'mu1' : tf.Variable(tf.random_normal([20],stddev=0.01)),
+        'mu2': tf.Variable(tf.random_normal([1],stddev=0.01)),
+        'sigma1': tf.Variable(tf.random_normal([20],stddev=0.01)),
+        'sigma2': tf.Variable(tf.random_normal([1],stddev=0.01)),
     }
 
     mu, sigma = neural_net(X)
     loss_op = 0.5 / 100 * tf.reduce_sum(tf.log(sigma) + tf.squared_difference(mu, y_train) / sigma)  # loss function
     #loss_op = tf.keras.losses.MSE(y_train,Y_hat)
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.001)  # define optimizer # play around with learning rate
+    optimizer = tf.train.AdamOptimizer(learning_rate=0.005)  # define optimizer # play around with learning rate
     train_op = optimizer.minimize(loss_op)  # minimize loss
     init = tf.global_variables_initializer()
-    epoch = 5000
+    epoch = 10000
 
     with tf.Session() as sess:
         sess.run(init)
