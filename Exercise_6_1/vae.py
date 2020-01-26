@@ -26,8 +26,11 @@ class VAE(object):
         self.history = None
 
         # network parameters
+        # number of nodes in the hidden layers
         self.intermediate_dim = 512
+        # size of the filters in the conv layers
         self.filters = 64
+        # kernel size in conv layers
         self.kernel_size = 3
 
     def compile_mlp_model(self):
@@ -35,21 +38,30 @@ class VAE(object):
 
         # creating encoder
         self.inputs = tf.keras.layers.Input(shape=(self.origin_dim,), name='encoder_input')
+
+        # hidden fully connected layers with small dropout between the layers
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(self.inputs)
         x = tf.keras.layers.Dropout(0.1)(x)
-        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
         x = tf.keras.layers.Dropout(0.1)(x)
-        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
 
+        # parallel layers: mean and variance
         z_mean = tf.keras.layers.Dense(self.latent_dim, name='z_mean')(x)
         z_log_var = tf.keras.layers.Dense(self.latent_dim, name='z_log_var')(x)
+
+        # applying reparametrization trick
         z = tf.keras.layers.Lambda(self.reparametrization, output_shape=(self.latent_dim,), name='z')(
             [z_mean, z_log_var])
         self.encoder = tf.keras.models.Model(self.inputs, [z_mean, z_log_var, z], name='encoder')
+
+        # plot the architecture of the encoder
         tf.keras.utils.plot_model(self.encoder, to_file=img_dir + 'vae_mlp_encoder.png', show_shapes=True)
 
         # creating decoder
         latent_inputs = tf.keras.layers.Input(shape=(self.latent_dim,), name='z_sampling')
+
+        # decoder hidden layers, similar to the encoder
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(latent_inputs)
         x = tf.keras.layers.Dropout(0.1)(x)
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x) # extra
@@ -64,7 +76,7 @@ class VAE(object):
         self.outputs = self.decoder(self.encoder(self.inputs)[2])
         self.vae = tf.keras.models.Model(self.inputs, self.outputs, name='vae_mlp')
 
-        # loss
+        # loss function
         reconstruction_loss = tf.keras.losses.mse(self.inputs, self.outputs)
         reconstruction_loss *= self.origin_dim
         kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
@@ -82,6 +94,7 @@ class VAE(object):
         # create encoder
         self.inputs = tf.keras.layers.Input(shape=(self.img_shape, self.img_shape, 1))
         x = self.inputs
+        # adding convolutional layers on the the of the encoder
         for i in range(2):
             self.filters *= 2
             x = tf.keras.layers.Conv2D(filters=self.filters,
@@ -91,10 +104,12 @@ class VAE(object):
                                        padding='same')(x)
 
         shape = K.int_shape(x)
-
+        # flattening the convolutional layers and pass it to the fully connected layers
         x = tf.keras.layers.Flatten()(x)
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
-        x = tf.keras.layers.Dropout(0.5)(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
 
         z_mean = tf.keras.layers.Dense(self.latent_dim, name='z_mean')(x)
@@ -108,11 +123,15 @@ class VAE(object):
         # instantiate decoder
         latent_inputs = tf.keras.layers.Input(shape=(self.latent_dim,), name='z_sampling')
         x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(latent_inputs)
-        x = tf.keras.layers.Dropout(0.5)(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
+        x = tf.keras.layers.Dropout(0.1)(x)
+        x = tf.keras.layers.Dense(self.intermediate_dim, activation='relu')(x)
+
         x = tf.keras.layers.Dense(shape[1] * shape[2] * shape[3], activation='relu')(x)
 
+        # reshape a data the the proper dimension, and applying deconvolution
         x = tf.keras.layers.Reshape((shape[1], shape[2], shape[3]))(x)
-
         for i in range(2):
             x = tf.keras.layers.Conv2DTranspose(filters=self.filters,
                                                 kernel_size=self.kernel_size,
@@ -148,6 +167,7 @@ class VAE(object):
         tf.keras.utils.plot_model(self.vae, to_file=img_dir + 'vae_cnn.png', show_shapes=True)
 
     def reparametrization(self, args):
+        # sample the distribution of the latent dimension
         z_mean, z_log_var = args
         batch = K.shape(z_mean)[0]
         dim = K.int_shape(z_mean)[1]
@@ -156,6 +176,7 @@ class VAE(object):
         return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
     def train(self, x_train, epochs, batch_size, x_test):
+        # use early stopping to prevent overfitting by interrupting the training process
         es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
         self.history = self.vae.fit(x_train,
                                     epochs=epochs,
@@ -225,7 +246,7 @@ class VAE(object):
 
 if __name__ == '__main__':
 
-    MODE = 'mlp'  # cnn or mlp for now
+    MODE = 'cnn'  # cnn or mlp for now
     if MODE not in ['cnn', 'mlp']:
         raise Exception('Unrecognized mode. valid values: mlp or cnn')
 
