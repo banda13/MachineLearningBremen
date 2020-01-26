@@ -5,12 +5,19 @@ import tensorflow.compat.v1 as tf
 
 tf.disable_v2_behavior()
 
+def plot_mean_and_CI(x, mean, variance, color_mean=None, color_shading=None):
+    # plot the shaded range of the confidence intervals
+    ub = mean + variance
+    lb = mean - variance
+    plt.fill_between(x, ub, lb,
+                     color=color_shading, alpha=.5)
+    plt.plot(x_test.ravel(), pred[0].ravel(), color_mean, lw=3,
+             label="Confidence Interval")
 
-def generate_sine_dataset(seed):
+def generate_sine_dataset(seed, n_sample=100):
     np.random.seed(seed)
-    n_sample = 100
 
-    X = np.random.uniform(-np.pi, np.pi, n_sample )
+    X = np.random.uniform(-np.pi, np.pi, n_sample)
     Y = []
     for x in X:
         if x < 0:
@@ -21,8 +28,6 @@ def generate_sine_dataset(seed):
 
     X_train = np.array(X)
     Y_train = np.array(Y)
-    '''X_test = np.array(X[90:100])
-    Y_test = np.array(Y[90:100])'''
 
     X_test = np.linspace(-np.pi, np.pi, int(n_sample / 3))[:, np.newaxis]
     Y_test = np.sin(0.5 * X_test)
@@ -33,7 +38,7 @@ def generate_sine_dataset(seed):
 
 def gaussian_log_likelihood(Y, mu, sigma):
     sum = tf.log(sigma) + (mu - Y) ** 2 / sigma
-    return 0.5 / sum.shape[0] * tf.reduce_sum(sum)
+    return 0.5 / Y.shape[0] * tf.reduce_sum(sum)
 
 
 def neural_net(x):
@@ -43,9 +48,6 @@ def neural_net(x):
     # hideen layer 2
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
     layer_2 = tf.nn.relu(layer_2)  # activation
-    # output layer
-    #out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
-    #mu, sigma = tf.nn.moments(out_layer, [0])
 
     mu_h1 = tf.add(tf.matmul(layer_2, weights['mu1']), biases['mu1'])
     mu_h1 = tf.nn.relu(mu_h1)
@@ -57,7 +59,6 @@ def neural_net(x):
 
     sigma_out = tf.add(tf.matmul(sigma_h1, weights['sigma2']), biases['sigma2'])
 
-    #return (out_layer), mu_h2, sigma_h2
     return mu_out, sigma_out
 
 
@@ -69,23 +70,19 @@ if __name__ == "__main__":
     SIGMA = tf.placeholder("float", [None, 1])
 
     weights = {
-        'h1': tf.Variable(tf.random_normal([1, 20],stddev=0.01)),  # 4 inputs 10  nodes in h1 layer
-        'h2': tf.Variable(tf.random_normal([20, 10],stddev=0.01)),  # 10 nodes in h2 layer
-        #'out': tf.Variable(tf.random_normal([10, 1])),  # 1 ouput label
-        #'mu_sigma': tf.Variable(tf.random_normal([1, 2])),
-        'mu1': tf.Variable(tf.random_normal([10, 20],stddev=0.001)),
-        'mu2': tf.Variable(tf.random_normal([20, 1],stddev=0.001)),
-        'sigma1': tf.Variable(tf.random_normal([10, 20],stddev=0.001)),
-        'sigma2': tf.Variable(tf.random_normal([20, 1],stddev=0.001)),
+        'h1': tf.Variable(tf.random_normal([1, 50],stddev=0.01)),
+        'h2': tf.Variable(tf.random_normal([50, 20],stddev=0.01)),
+        'mu1': tf.Variable(tf.random_normal([20, 60],stddev=0.001)),
+        'mu2': tf.Variable(tf.random_normal([60, 1],stddev=0.001)),
+        'sigma1': tf.Variable(tf.random_normal([20, 40],stddev=0.001)),
+        'sigma2': tf.Variable(tf.random_normal([40, 1],stddev=0.001)),
     }
     biases = {
-        'b1': tf.Variable(tf.random_normal([20],stddev=0.01)),
-        'b2': tf.Variable(tf.random_normal([10],stddev=0.01)),
-        #'out': tf.Variable(tf.random_normal([1])),
-        #'mu_sigma': tf.Variable(tf.random_normal([2])),
-        'mu1' : tf.Variable(tf.random_normal([20],stddev=0.001)),
+        'b1': tf.Variable(tf.random_normal([50],stddev=0.01)),
+        'b2': tf.Variable(tf.random_normal([20],stddev=0.01)),
+        'mu1' : tf.Variable(tf.random_normal([60],stddev=0.001)),
         'mu2': tf.Variable(tf.random_normal([1],stddev=0.001)),
-        'sigma1': tf.Variable(tf.random_normal([20],stddev=0.001)),
+        'sigma1': tf.Variable(tf.random_normal([40],stddev=0.001)),
         'sigma2': tf.Variable(tf.random_normal([1],stddev=0.001)),
     }
 
@@ -93,9 +90,9 @@ if __name__ == "__main__":
     loss_op = 0.5 / 100 * tf.reduce_sum(tf.log(sigma) + tf.squared_difference(mu, y_train) / sigma)  # loss function
     #loss_op = tf.keras.losses.MSE(y_train,Y_hat)
     optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)  # define optimizer # play around with learning rate
-    train_op = optimizer.minimize(loss_op)  # minimize loss
+    train_op = optimizer.minimize(gaussian_log_likelihood(y_train, mu, sigma))  # minimize loss
     init = tf.global_variables_initializer()
-    epoch = 10000
+    epoch = 5000
 
     with tf.Session() as sess:
         sess.run(init)
@@ -104,23 +101,13 @@ if __name__ == "__main__":
             loss = sess.run(loss_op, feed_dict={X: x_train, MU: np.mean(y_train).reshape(1,1), SIGMA: np.std(y_train).reshape(1,1)})
             if (i % 100 == 0):
                 print("epoch no " + str(i), (loss))
-            pred = sess.run([mu,sigma], feed_dict={X: x_test})
+            pred = sess.run([mu, sigma], feed_dict={X: x_test})
 
-    # TODO: expected function?, correct interval, scatter
-    #       plot mean, variance
-
-    '''plt.plot((pred), color='red', label='Prediction')
-    plt.plot(y_test, color='blue', label='Orignal')
-    plt.legend(loc='upper left')
-    plt.show()'''
 
     plt.figure()
     plt.title("Prediction")
-    plt.scatter(x_train.ravel(), y_train.ravel(), label="Training set (noisy)")
-    plt.plot(x_test.ravel(), y_test.ravel(), lw=3, label="True function")
-    plt.plot(x_test.ravel(), pred[0].ravel(), lw=3,
-             label="Mean")
-    plt.plot(x_test.ravel(), pred[1].ravel(), lw=3,
-             label="Variance")
+    plt.scatter(x_train.ravel(), y_train.ravel(), label="Training set (noisy)", s=15)
+    plt.plot(x_test.ravel(), y_test.ravel(), 'g', lw=3, label="True function")
+    plot_mean_and_CI(x_test.ravel(), pred[0].ravel(), pred[1].ravel(), color_mean='y', color_shading='y')
     plt.legend(loc="best")
     plt.show()
