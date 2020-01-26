@@ -39,6 +39,7 @@ class RNN(object):
 
         # filter out the columns
         pm_dfs = [d.filter(like='PM_') for d in data_sources]
+        # pm_dfs = [d.filter(items=['TEMP']) for d in data_sources]
         pm_dfs = [d.mean(axis=1) for d in pm_dfs]
         date_dfs = [d.filter(items=['year', 'month', 'day', 'hour']) for d in data_sources]
         dfs = [pd.concat([d1, d2], axis=1) for d1, d2 in zip(pm_dfs, date_dfs)]
@@ -46,8 +47,6 @@ class RNN(object):
         df = dfs[0]
         for d in dfs[1:]:
             df = pd.merge(df, d, on=['year', 'month', 'day', 'hour'])
-
-        # print(df.head(5))
 
         df = df.drop(['year', 'month', 'day', 'hour'], axis=1)
         df = df.mean(axis=1)
@@ -57,10 +56,6 @@ class RNN(object):
 
         # convert it numpy array
         self.dataset = df.values.reshape(-1, 1)
-
-        # shorter the data for testing (test only 5% of the data to make it faster)
-        # TODO remove this, this is only for testing!!!!!!!
-        # self.dataset = self.dataset[:int(len(self.dataset) * 0.8)]
 
         # normalize the data
         self.dataset = self.scaler.fit_transform(self.dataset)
@@ -75,8 +70,8 @@ class RNN(object):
         self.testX, self.testY = self.create_dataset(test, self.sliding_window_size)
 
         # reshape input to be [samples, time steps, features]
-        self.trainX = np.reshape(self.trainX, (self.trainX.shape[0], 1, self.trainX.shape[1]))
-        self.testX = np.reshape(self.testX, (self.testX.shape[0], 1, self.testX.shape[1]))
+        self.trainX = np.reshape(self.trainX, (self.trainX.shape[0], self.trainX.shape[1], 1))
+        self.testX = np.reshape(self.testX, (self.testX.shape[0], self.testX.shape[1], 1))
 
     def create_dataset(self, dataset, sliding_window_size):
         dataX, dataY = [], []
@@ -88,13 +83,14 @@ class RNN(object):
 
     def compile_model(self):
         self.model = tf.keras.models.Sequential()
-        self.model.add(tf.keras.layers.LSTM(64, input_shape=(1, self.sliding_window_size))) # return_sequences=True
-        self.model.add(tf.keras.layers.Dense(64))
+        self.model.add(tf.keras.layers.LSTM(64, input_shape=(self.sliding_window_size, 1))) # return_sequences=True
+        self.model.add(tf.keras.layers.Dense(32))
         self.model.add(tf.keras.layers.Dense(32))
         self.model.add(tf.keras.layers.Dense(1))
         #
         # tf.keras.optimizers.RMSprop(learning_rate=0.00005, rho=0.9)
-        self.model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.SGD(lr=0.1, decay=1e-9, momentum=0.98, nesterov=True), metrics=['accuracy'])
+        # SGD(lr=0.1, decay=1e-9, momentum=0.98, nesterov=True)
+        self.model.compile(loss='mean_squared_error', optimizer=tf.keras.optimizers.Adam(lr=0.00005))
 
     def train(self, epochs=10, batch_size=1, verbose=1):
         es = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=1)
@@ -160,6 +156,6 @@ if __name__ == '__main__':
     rnn = RNN(sliding_window_size=5)
     rnn.load_and_preprocess()
     rnn.compile_model()
-    rnn.train(epochs=10, batch_size=32)
+    rnn.train(epochs=20, batch_size=32)
     train_loss, test_loss = rnn.evaluate()
     rnn.plot()
