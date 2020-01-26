@@ -8,8 +8,9 @@ tf.disable_v2_behavior()
 
 def generate_sine_dataset(seed):
     np.random.seed(seed)
+    n_sample = 100
 
-    X = np.random.uniform(-np.pi, np.pi, 100)
+    X = np.random.uniform(-np.pi, np.pi, n_sample )
     Y = []
     for x in X:
         if x < 0:
@@ -23,14 +24,16 @@ def generate_sine_dataset(seed):
     '''X_test = np.array(X[90:100])
     Y_test = np.array(Y[90:100])'''
 
-    X_test = np.linspace(-np.pi, np.pi, 50)[:, np.newaxis]
+    X_test = np.linspace(-np.pi, np.pi, int(n_sample / 3))[:, np.newaxis]
     Y_test = np.sin(0.5 * X_test)
 
-    return X_train.reshape(100, 1), Y_train.reshape(100, 1), X_test.reshape(50, 1), Y_test.reshape(50, 1)
+    return X_train.reshape(n_sample , 1), Y_train.reshape(n_sample , 1),\
+           X_test.reshape(int(n_sample / 3), 1), Y_test.reshape(int(n_sample / 3), 1)
 
 
-def gaussian_log_likelihood(Y, mu, sigma=0.01):
-    return 0.5 / 100 * tf.reduce_sum(tf.log(sigma) + (mu - Y) ** 2 / sigma)
+def gaussian_log_likelihood(Y, mu, sigma):
+    sum = tf.log(sigma) + (mu - Y) ** 2 / sigma
+    return 0.5 / sum.shape[0] * tf.reduce_sum(sum)
 
 
 def neural_net(x):
@@ -66,30 +69,30 @@ if __name__ == "__main__":
     SIGMA = tf.placeholder("float", [None, 1])
 
     weights = {
-        'h1': tf.Variable(tf.random_normal([1, 20])),  # 4 inputs 10  nodes in h1 layer
-        'h2': tf.Variable(tf.random_normal([20, 10])),  # 10 nodes in h2 layer
+        'h1': tf.Variable(tf.random_normal([1, 20],stddev=0.01)),  # 4 inputs 10  nodes in h1 layer
+        'h2': tf.Variable(tf.random_normal([20, 10],stddev=0.01)),  # 10 nodes in h2 layer
         #'out': tf.Variable(tf.random_normal([10, 1])),  # 1 ouput label
         #'mu_sigma': tf.Variable(tf.random_normal([1, 2])),
-        'mu1': tf.Variable(tf.random_normal([10, 20],stddev=0.01)),
-        'mu2': tf.Variable(tf.random_normal([20, 1],stddev=0.01)),
-        'sigma1': tf.Variable(tf.random_normal([10, 20],stddev=0.01)),
-        'sigma2': tf.Variable(tf.random_normal([20, 1],stddev=0.01)),
+        'mu1': tf.Variable(tf.random_normal([10, 20],stddev=0.001)),
+        'mu2': tf.Variable(tf.random_normal([20, 1],stddev=0.001)),
+        'sigma1': tf.Variable(tf.random_normal([10, 20],stddev=0.001)),
+        'sigma2': tf.Variable(tf.random_normal([20, 1],stddev=0.001)),
     }
     biases = {
         'b1': tf.Variable(tf.random_normal([20],stddev=0.01)),
         'b2': tf.Variable(tf.random_normal([10],stddev=0.01)),
         #'out': tf.Variable(tf.random_normal([1])),
         #'mu_sigma': tf.Variable(tf.random_normal([2])),
-        'mu1' : tf.Variable(tf.random_normal([20],stddev=0.01)),
-        'mu2': tf.Variable(tf.random_normal([1],stddev=0.01)),
-        'sigma1': tf.Variable(tf.random_normal([20],stddev=0.01)),
-        'sigma2': tf.Variable(tf.random_normal([1],stddev=0.01)),
+        'mu1' : tf.Variable(tf.random_normal([20],stddev=0.001)),
+        'mu2': tf.Variable(tf.random_normal([1],stddev=0.001)),
+        'sigma1': tf.Variable(tf.random_normal([20],stddev=0.001)),
+        'sigma2': tf.Variable(tf.random_normal([1],stddev=0.001)),
     }
 
     mu, sigma = neural_net(X)
     loss_op = 0.5 / 100 * tf.reduce_sum(tf.log(sigma) + tf.squared_difference(mu, y_train) / sigma)  # loss function
     #loss_op = tf.keras.losses.MSE(y_train,Y_hat)
-    optimizer = tf.train.AdamOptimizer(learning_rate=0.005)  # define optimizer # play around with learning rate
+    optimizer = tf.train.RMSPropOptimizer(learning_rate=0.01)  # define optimizer # play around with learning rate
     train_op = optimizer.minimize(loss_op)  # minimize loss
     init = tf.global_variables_initializer()
     epoch = 10000
