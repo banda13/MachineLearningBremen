@@ -19,7 +19,10 @@ def plot_mean_and_CI(x, mean, variance, color_mean=None, color_shading=None):
 def generate_sine_dataset(seed, n_sample=100):
     np.random.seed(seed)
 
-    X = np.random.uniform(-np.pi, np.pi, n_sample)
+    train_shape = int(3*n_sample/4)
+    test_shape = int(n_sample / 4)
+
+    X = np.random.uniform(-np.pi, np.pi, train_shape)
     Y = []
     for x in X:
         if x < 0:
@@ -31,11 +34,12 @@ def generate_sine_dataset(seed, n_sample=100):
     X_train = np.array(X)
     Y_train = np.array(Y)
 
-    X_test = np.linspace(-np.pi, np.pi, int(n_sample / 3))[:, np.newaxis]
+    X_test = np.random.uniform(-np.pi, np.pi, test_shape)
+    X_test.sort()
     Y_test = np.sin(0.5 * X_test)
 
-    return X_train.reshape(n_sample, 1), Y_train.reshape(n_sample, 1), \
-           X_test.reshape(int(n_sample / 3), 1), Y_test.reshape(int(n_sample / 3), 1)
+    return X_train.reshape(train_shape, 1), Y_train.reshape(train_shape, 1), \
+           X_test.reshape(test_shape, 1), Y_test.reshape(test_shape, 1)
 
 
 def gaussian_log_likelihood(Y, mu, sigma):
@@ -98,12 +102,12 @@ class two_headed_model(object):
             for i in range(0, epoch):
                 sess.run(self.train_op,
                          feed_dict={self.X: x_train, self.MU: np.mean(y_train).reshape(1, 1),
-                                    self.SIGMA: np.std(y_train).reshape(1, 1)})
+                                    self.SIGMA: (np.std(y_train)**2).reshape(1, 1)})
                 loss = sess.run(self.loss_op, feed_dict={self.X: x_train, self.MU: np.mean(y_train).reshape(1, 1),
                                                     self.SIGMA: np.std(y_train).reshape(1, 1)})
                 if (i % 100 == 0):
                     print("epoch no " + str(i), (loss))
-                pred = sess.run([self.mu, self.sigma], feed_dict={self.X: x_test})
+            pred = sess.run([self.mu, self.sigma], feed_dict={self.X: x_test})
             self.pred_mean = pred[0]
             self.pred_var = pred[1]
 
@@ -117,11 +121,11 @@ class two_headed_model(object):
         plt.show()
 
 if __name__ == "__main__":
-    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=30)
+    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=1000)
     two_headed = two_headed_model()
     two_headed.construct_model()
     two_headed.compile(y_train=y_train, learning_rate=0.0006)
-    two_headed.train(x_train=x_train, y_train=y_train, x_test=x_test, epoch=10000)
+    two_headed.train(x_train=x_train, y_train=y_train, x_test=x_test, epoch=1000)
     two_headed.plot(x_train, y_train, x_test, y_test)
 
 
