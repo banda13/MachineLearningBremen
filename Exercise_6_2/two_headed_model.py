@@ -13,7 +13,7 @@ def plot_mean_and_CI(x, mean, variance, color_mean=None, color_shading=None):
     plt.fill_between(x, ub, lb,
                      color=color_shading, alpha=.5)
     plt.plot(x_test.ravel(), mean.ravel(), color_mean, lw=3,
-             label="Confidence Interval")
+             label="Confidence Interval: "+ str(x.shape[0])+" samples")
 
 
 def generate_sine_dataset(seed, n_sample=100):
@@ -59,17 +59,21 @@ class two_headed_model(object):
             'h1': tf.Variable(tf.random_normal([1, 50], stddev=0.01)),
             'h2': tf.Variable(tf.random_normal([50, 20], stddev=0.01)),
             'mu1': tf.Variable(tf.random_normal([20, 60], stddev=0.001)),
-            'mu2': tf.Variable(tf.random_normal([60, 1], stddev=0.001)),
+            'mu2': tf.Variable(tf.random_normal([60, 30], stddev=0.001)),
+            'mu_out': tf.Variable(tf.random_normal([30, 1], stddev=0.001)),
             'sigma1': tf.Variable(tf.random_normal([20, 40], stddev=0.001)),
-            'sigma2': tf.Variable(tf.random_normal([40, 1], stddev=0.001)),
+            'sigma2': tf.Variable(tf.random_normal([40, 20], stddev=0.001)),
+            'sigma_out': tf.Variable(tf.random_normal([20, 1], stddev=0.001))
         }
         biases = {
             'b1': tf.Variable(tf.random_normal([50], stddev=0.01)),
             'b2': tf.Variable(tf.random_normal([20], stddev=0.01)),
             'mu1': tf.Variable(tf.random_normal([60], stddev=0.001)),
-            'mu2': tf.Variable(tf.random_normal([1], stddev=0.001)),
+            'mu2': tf.Variable(tf.random_normal([30], stddev=0.001)),
+            'mu_out': tf.Variable(tf.random_normal([1], stddev=0.001)),
             'sigma1': tf.Variable(tf.random_normal([40], stddev=0.001)),
-            'sigma2': tf.Variable(tf.random_normal([1], stddev=0.001)),
+            'sigma2': tf.Variable(tf.random_normal([20], stddev=0.001)),
+            'sigma_out': tf.Variable(tf.random_normal([1], stddev=0.001))
         }
         layer_1 = tf.add(tf.matmul(self.X, weights['h1']), biases['b1'])
         layer_1 = tf.nn.relu(layer_1)  # activation
@@ -80,13 +84,20 @@ class two_headed_model(object):
         mu_h1 = tf.add(tf.matmul(layer_2, weights['mu1']), biases['mu1'])
         mu_h1 = tf.nn.relu(mu_h1)
 
-        mu_out = tf.add(tf.matmul(mu_h1, weights['mu2']), biases['mu2'])
+        mu_h2 = tf.add(tf.matmul(mu_h1, weights['mu2']), biases['mu2'])
+        mu_h2= tf.nn.relu(mu_h2)
+
+        mu_out = tf.add(tf.matmul(mu_h2, weights['mu_out']), biases['mu_out'])
         self.mu = mu_out
 
         sigma_h1 = tf.add(tf.matmul(layer_2, weights['sigma1']), biases['sigma1'])
         sigma_h1 = tf.nn.sigmoid(sigma_h1)
 
-        sigma_out = tf.add(tf.matmul(sigma_h1, weights['sigma2']), biases['sigma2'])
+        sigma_h2 = tf.add(tf.matmul(sigma_h1, weights['sigma2']), biases['sigma2'])
+        sigma_h2 = tf.nn.sigmoid(sigma_h2)
+
+        sigma_out = tf.add(tf.matmul(sigma_h2, weights['sigma_out']), biases['sigma_out'])
+
         self.sigma = tf.nn.sigmoid(sigma_out)
 
     def compile(self, y_train, learning_rate=0.001):
@@ -114,18 +125,44 @@ class two_headed_model(object):
     def plot(self, x_train, y_train, x_test, y_test):
         plt.figure()
         plt.title("Prediction")
-        plt.scatter(x_train.ravel(), y_train.ravel(), label="Training set (noisy)", s=10)
+        plt.scatter(x_train.ravel(), y_train.ravel(), label="Training set (noisy): "
+                                                            +str(x_train.shape[0])+" samples", s=10)
         plt.plot(x_test.ravel(), y_test.ravel(), 'g', lw=3, label="True function")
         plot_mean_and_CI(x_test.ravel(), self.pred_mean.ravel(), self.pred_var.ravel(), color_mean='y', color_shading='y')
         plt.legend(loc="best")
         plt.show()
 
 if __name__ == "__main__":
-    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=1000)
+    # point a)
+    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=100)
+
     two_headed = two_headed_model()
     two_headed.construct_model()
-    two_headed.compile(y_train=y_train, learning_rate=0.0006)
+    two_headed.compile(y_train=y_train, learning_rate=0.006)
+    two_headed.train(x_train=x_train, y_train=y_train, x_test=x_test, epoch=3000)
+    two_headed.plot(x_train, y_train, x_test, y_test)
+    
+    # point b)
+    i = 10
+    while i < 1300:
+        x_train, y_train, x_test, y_test = generate_sine_dataset(23, n_sample=i)
+        two_headed = two_headed_model()
+        two_headed.construct_model()
+        two_headed.compile(y_train=y_train, learning_rate=0.006)
+        two_headed.train(x_train=x_train, y_train=y_train, x_test=x_test, epoch=3000)
+        two_headed.plot(x_train, y_train, x_test, y_test)
+        i *= 2
+    
+    #point c)
+
+    shape = x_test.shape[0]
+    x_test = np.random.uniform(-4*np.pi, 4*np.pi, shape)
+    x_test.sort()
+    x_test = x_test.reshape(shape, 1)
+    y_test = np.sin(0.5 * x_test)
+
+    two_headed = two_headed_model()
+    two_headed.construct_model()
+    two_headed.compile(y_train=y_train, learning_rate=0.006)
     two_headed.train(x_train=x_train, y_train=y_train, x_test=x_test, epoch=1000)
     two_headed.plot(x_train, y_train, x_test, y_test)
-
-
