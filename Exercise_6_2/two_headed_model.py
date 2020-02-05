@@ -155,7 +155,7 @@ if __name__ == "__main__":
     
     #point c)
 
-    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=100)
+
     shape = x_test.shape[0]
     x_test = np.random.uniform(-4*np.pi, 4*np.pi, shape)
     x_test.sort()
