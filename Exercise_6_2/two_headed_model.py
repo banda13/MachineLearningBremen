@@ -145,7 +145,7 @@ if __name__ == "__main__":
     # point b)
     i = 10
     while i < 1300:
-        x_train, y_train, x_test, y_test = generate_sine_dataset(randomseed=23+i, n_sample=i)
+        x_train, y_train, x_test, y_test = generate_sine_dataset(seed=23+i, n_sample=i)
         two_headed = two_headed_model()
         two_headed.construct_model()
         two_headed.compile(y_train=y_train, learning_rate=0.006)
@@ -155,6 +155,7 @@ if __name__ == "__main__":
     
     #point c)
 
+    x_train, y_train, x_test, y_test = generate_sine_dataset(17, n_sample=100)
     shape = x_test.shape[0]
     x_test = np.random.uniform(-4*np.pi, 4*np.pi, shape)
     x_test.sort()
