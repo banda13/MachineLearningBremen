@@ -202,12 +202,12 @@ class RNN(object):
 if __name__ == '__main__':
 
     # choose parameters
-    recurrent_layer = 'lstm'  # lstm or rnn or gru
-    attention = False  # attention is enabled
+    recurrent_layer = 'gru'  # lstm or rnn or gru
+    attention = True  # attention is enabled
 
     rnn = RNN(sliding_window_size=5, rnn=recurrent_layer, attention=attention)
     rnn.load_and_preprocess()
     rnn.compile_model()
-    rnn.train(epochs=50 , batch_size=64)
+    rnn.train(epochs=50, batch_size=64)
     train_loss, test_loss = rnn.evaluate()
     rnn.plot()
