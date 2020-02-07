@@ -7,18 +7,25 @@ import tensorflow as tf
 from sklearn.preprocessing import MinMaxScaler
 
 
+# inherit from Keras models as our attention we are using a small nn
 class Attention(tf.keras.Model):
 
     def __init__(self, units):
         super(Attention, self).__init__()
+        # dense layer + 1 output layer with one output unit
         self.W1 = tf.keras.layers.Dense(units)
         self.W2 = tf.keras.layers.Dense(units)
         self.V = tf.keras.layers.Dense(1)
 
     def __call__(self, features, hidden):
         hidden_with_time_axis = tf.expand_dims(hidden, 1)
+
+        # calculate the weights using softmax activation
         score = tf.nn.tanh(self.W1(features) + self.W2(hidden_with_time_axis))
         attention_weights = tf.nn.softmax(self.V(score), axis=1)
+
+        # all encoded states of the rnn are equally valuable
+        # so we are using the weighted sum of these encoded states
         context_vector = attention_weights * features
         context_vector = tf.reduce_sum(context_vector, axis=1)
 
@@ -31,6 +38,7 @@ IMAGE_FOLDER = "images/"
 if not os.path.isdir(IMAGE_FOLDER):
     os.mkdir(IMAGE_FOLDER)
 
+# needed for backwards compatibility
 tf.compat.v1.enable_eager_execution()
 
 
@@ -106,7 +114,7 @@ class RNN(object):
         input = tf.keras.layers.Input(shape=(self.sliding_window_size, 1))
         return_seq = self.with_attention
 
-        attention = Attention(64)
+        attention = Attention(16)
         if self.rnn == 'lstm':
             lstm, forward_h, forward_c = tf.keras.layers.LSTM(64, return_sequences=return_seq, return_state=True)(input)
         elif self.rnn == 'rnn':
@@ -193,12 +201,13 @@ class RNN(object):
 
 if __name__ == '__main__':
 
-    recurrent_layer = 'rnn'  # lstm or rnn or gru
+    # choose parameters
+    recurrent_layer = 'lstm'  # lstm or rnn or gru
     attention = False  # attention is enabled
 
     rnn = RNN(sliding_window_size=5, rnn=recurrent_layer, attention=attention)
     rnn.load_and_preprocess()
     rnn.compile_model()
-    rnn.train(epochs=10, batch_size=64)
+    rnn.train(epochs=50 , batch_size=64)
     train_loss, test_loss = rnn.evaluate()
     rnn.plot()

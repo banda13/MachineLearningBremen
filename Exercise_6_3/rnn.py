@@ -12,6 +12,7 @@ IMAGE_FOLDER = "images/"
 if not os.path.isdir(IMAGE_FOLDER):
     os.mkdir(IMAGE_FOLDER)
 
+# needed for backwards compatibility
 tf.compat.v1.enable_eager_execution()
 
 
